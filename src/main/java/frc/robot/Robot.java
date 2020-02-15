@@ -29,22 +29,22 @@ import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 public class Robot extends TimedRobot {
 
   // Driver Input
-  private Joystick m_joystick = new Joystick(RobotMap.kJoystick);
-  private Joystick m_gamepad = new Joystick(RobotMap.kGamepad);
+  private Joystick m_joystick = new Joystick(IDs.kJoystick);
+  private Joystick m_gamepad = new Joystick(IDs.kGamepad);
 
   // Drive Motors
-  private WPI_TalonFX driveFL = new WPI_TalonFX(RobotMap.kFrontLeftChannel);
-  private WPI_TalonFX driveRL = new WPI_TalonFX(RobotMap.kRearLeftChannel);
-  private WPI_TalonFX driveFR = new WPI_TalonFX(RobotMap.kFrontRightChannel);
-  private WPI_TalonFX driveRR = new WPI_TalonFX(RobotMap.kRearRightChannel);
+  private WPI_TalonFX driveFL = new WPI_TalonFX(IDs.kFrontLeftChannel);
+  private WPI_TalonFX driveRL = new WPI_TalonFX(IDs.kRearLeftChannel);
+  private WPI_TalonFX driveFR = new WPI_TalonFX(IDs.kFrontRightChannel);
+  private WPI_TalonFX driveRR = new WPI_TalonFX(IDs.kRearRightChannel);
 
   // Game Piece Manipulation
-  private WPI_VictorSPX intakeMotor = new WPI_VictorSPX(RobotMap.kIntake);
-  private WPI_VictorSPX indexMotor = new WPI_VictorSPX(RobotMap.kIndexer);
-  private WPI_VictorSPX hopperMotor = new WPI_VictorSPX(RobotMap.kHopper);
+  private WPI_VictorSPX intakeMotor = new WPI_VictorSPX(IDs.kIntake);
+  private WPI_VictorSPX indexMotor = new WPI_VictorSPX(IDs.kIndexer);
+  private WPI_VictorSPX hopperMotor = new WPI_VictorSPX(IDs.kHopper);
   
-  private CANSparkMax shooterMotorL = new CANSparkMax(RobotMap.kShooterL, MotorType.kBrushless);
-  private CANSparkMax shooterMotorR = new CANSparkMax(RobotMap.kShooterR, MotorType.kBrushless);
+  private CANSparkMax shooterMotorL = new CANSparkMax(IDs.kShooterL, MotorType.kBrushless);
+  private CANSparkMax shooterMotorR = new CANSparkMax(IDs.kShooterR, MotorType.kBrushless);
 
   // Field Element Dimentional Information
   private static final double kTargetHeight = 98.25;
@@ -61,13 +61,14 @@ public class Robot extends TimedRobot {
   private final I2C.Port i2cPort = I2C.Port.kOnboard;
 
   // Pneumatics  
-  private Solenoid solenoid = new Solenoid(RobotMap.kPneumatics, 0);
+  private Solenoid solenoid = new Solenoid(IDs.kPneumatics, 0);
 
   // Encoders
   private double encoderPosition = driveFR.getSensorCollection().getIntegratedSensorPosition();
 
   @Override
   public void robotInit() {
+    
     // Invert left motors
     driveFL.setInverted(true);
     driveRL.setInverted(true);
@@ -121,16 +122,14 @@ public class Robot extends TimedRobot {
     double speedL = 0.0;
     double speedR = 0.0;
 
-
     // Controls : Joystick forward-backward + twist
-
     // Add joystick forward-backward
-    speedL += m_joystick.getRawAxis(1);
-    speedR += m_joystick.getRawAxis(1);
+    speedL += m_joystick.getRawAxis(IDs.JoystickIDs.Y_AXIS);
+    speedR += m_joystick.getRawAxis(IDs.JoystickIDs.Y_AXIS);
 
     // Add joystick twist
-    speedL -= m_joystick.getRawAxis(3);
-    speedR += m_joystick.getRawAxis(3);
+    speedL -= m_joystick.getRawAxis(IDs.JoystickIDs.TWIST_AXIS) * 0.75;
+    speedR += m_joystick.getRawAxis(IDs.JoystickIDs.TWIST_AXIS) * 0.75;
 
     // Limelight network table
     NetworkTable llTable = NetworkTableInstance.getDefault().getTable("limelight");
@@ -158,7 +157,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Target Distance", tDistance);
 
     // Toggle limelight driver camera on gamepad left bumper pressed
-    if (m_gamepad.getRawButtonPressed(5)) {
+    if (m_gamepad.getRawButtonPressed(IDs.ControllerIDs.LEFT_BUMPER_BUTTON)) {
       if (cm == 1) {
         llTableCM.setNumber(0);
       } else if (cm == 0) {
@@ -167,48 +166,47 @@ public class Robot extends TimedRobot {
     }
 
     // Drive shooter motors on gamepad Y button pressed
-    if(m_gamepad.getRawButton(4)){
+    if(m_gamepad.getRawButton(IDs.ControllerIDs.Y_BUTTON)){
       shooterMotorL.set(-shooterSpeed);
       shooterMotorR.set(-shooterSpeed);
     } else {
       shooterMotorL.set(0);
       shooterMotorR.set(0);
     }
-    
-    // Drive intake motor when gamepad X button pressed
-    if(m_gamepad.getRawButton(1)){
+
+    // Drive index and hopper motor on gamepad B button pressed
+    if(m_gamepad.getRawButton(IDs.ControllerIDs.B_BUTTON)){
+      hopperMotor.set(-0.3);
+      indexMotor.set(-1.0);
+    } else {
+      hopperMotor.set(0);
+      indexMotor.set(0);
+    }
+
+    // Drive intake motor in on gamepad A button pressed and out on gamepad X button pressed
+    if(m_gamepad.getRawButton(IDs.ControllerIDs.A_BUTTON)){
       intakeMotor.set(1.0);
+    } else if (m_gamepad.getRawButton(IDs.ControllerIDs.X_BUTTON)){
+      intakeMotor.set(-1.0);
     } else {
       intakeMotor.set(0.0);
     }
 
-    //Drive hopper motor on gamepad button pressed
-    if(m_gamepad.getRawButton(3)){
-      hopperMotor.set(-0.3);
-    }else{
-      hopperMotor.set(0);
-    }
-
-    // Drive index motor proportially with gamepad right trigger
-    indexMotor.set(-m_gamepad.getRawAxis(3));
-
     // Main drive
-    if (m_joystick.getRawButton(2)) {
+    if (m_joystick.getRawButton(IDs.ControllerIDs.RIGHT_BUMPER_BUTTON)) {
       // Turn on limelight
       llTableLM.setNumber(0);
 
       // Turn to target when horizontal angle from bot crosshair to target center is greater than 4 degrees
       if (Math.abs(tx) > 4.0) {
         turn(-((tx / 26) * 0.6));
-      } else if (Math.abs((tDistance - 100)) > 6) {
-        move(-((tDistance - 100) * 0.01));
       }
     } else {
       // Turn off limelight
       llTableLM.setNumber(1);
 
       // Drive with turbo speed on joystick trigger button pressed, else drive normal
-      if(m_joystick.getRawButton(1)){
+      if(m_joystick.getRawButton(IDs.JoystickIDs.TRIGGER_BUTTON)){
         move(speedL * speedMultiplierTurbo, speedR * speedMultiplierTurbo);
       } else {
         move(speedL * speedMultiplier, speedR * speedMultiplier);
