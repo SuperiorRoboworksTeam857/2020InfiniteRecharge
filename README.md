@@ -1,3 +1,3 @@
-# FRC 2020 Infinite Recharge Team 857 Game code
+# FRC Team 857 Game Code for 2020 Infinite Recharge 
 
 Sorry about the mess.
