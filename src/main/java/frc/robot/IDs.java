@@ -88,7 +88,7 @@ public class IDs {
         public static final int X_AXIS        = 0;
         public static final int Y_AXIS        = 1;
         public static final int THROTTLE_AXIS = 2;
-        public static final int TWIST_AXIS   = 3;
+        public static final int TWIST_AXIS    = 3;
     }
 
     // USB Input Devices

@@ -52,8 +52,11 @@ public class Robot extends TimedRobot {
   // Motor Output Limites
   private double speedMultiplier = 0.5;
   private double speedMultiplierTurbo = 0.6;
-  private double shooterSpeed = 0.685;
+  private double shooterSpeed = 0.9;     // at one tick out speed 0.685
   private final double kMaxDriveOutput = 0.6;
+
+  private double intakeMotorSpeed = 0;
+  private double hopperMotorSpeed = 0;
   
   // Sensors
   private ADXRS450_Gyro m_gyro = new ADXRS450_Gyro();
@@ -174,24 +177,23 @@ public class Robot extends TimedRobot {
       shooterMotorR.set(0);
     }
 
-    // Drive index and hopper motor on gamepad B button pressed
-    if(m_gamepad.getRawButton(IDs.ControllerIDs.B_BUTTON)){
-      hopperMotor.set(-0.3);
-      indexMotor.set(-1.0);
-    } else {
-      hopperMotor.set(0);
-      indexMotor.set(0);
-    }
 
     // Drive intake motor in on gamepad A button pressed and out on gamepad X button pressed
+
+    intakeMotorSpeed = 0;
+    hopperMotorSpeed = 0;
+
     if(m_gamepad.getRawButton(IDs.ControllerIDs.A_BUTTON)){
-      intakeMotor.set(1.0);
+      intakeMotorSpeed = 1.0;
+      hopperMotorSpeed = -0.3;
     } else if (m_gamepad.getRawButton(IDs.ControllerIDs.X_BUTTON)){
-      intakeMotor.set(-1.0);
-    } else {
-      intakeMotor.set(0.0);
+      intakeMotorSpeed = -1.0;
+      hopperMotorSpeed = -0.3;
     }
 
+    intakeMotor.set(intakeMotorSpeed);
+    hopperMotor.set(hopperMotorSpeed);
+    
     // Main drive
     if (m_joystick.getRawButton(IDs.ControllerIDs.RIGHT_BUMPER_BUTTON)) {
       // Turn on limelight
