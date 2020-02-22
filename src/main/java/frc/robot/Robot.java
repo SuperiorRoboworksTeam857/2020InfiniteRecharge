@@ -6,7 +6,6 @@
 /* the project.                                                               */
 /*----------------------------------------------------------------------------*/
 
-
 package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
@@ -14,8 +13,9 @@ import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
 import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
@@ -25,6 +25,8 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 
 public class Robot extends TimedRobot {
 
@@ -46,17 +48,22 @@ public class Robot extends TimedRobot {
   private CANSparkMax shooterMotorL = new CANSparkMax(IDs.kShooterL, MotorType.kBrushless);
   private CANSparkMax shooterMotorR = new CANSparkMax(IDs.kShooterR, MotorType.kBrushless);
 
+  // private WPI_TalonSRX climberMotorL = new WPI_TalonSRX(-1);
+  // private WPI_TalonSRX climberMotorR = new WPI_TalonSRX(-1);
+  // private WPI_TalonSRX climberLiftMotor = new WPI_TalonSRX(-1);
+
   // Field Element Dimentional Information
   private static final double kTargetHeight = 98.25;
 
-  // Motor Output Limites
+  // Motor Output Limits
   private double speedMultiplier = 0.5;
   private double speedMultiplierTurbo = 0.6;
-  private double shooterSpeed = 0.9;     // at one tick out speed 0.685
+  private double shooterSpeed = 0.9; // at one tick out speed 0.685l
   private final double kMaxDriveOutput = 0.6;
-
-  private double intakeMotorSpeed = 0;
-  private double hopperMotorSpeed = 0;
+  
+  private double indexMotorSpeed = 0.0;
+  private double intakeMotorSpeed = 0.0;
+  private double hopperMotorSpeed = 0.0;
   
   // Sensors
   private ADXRS450_Gyro m_gyro = new ADXRS450_Gyro();
@@ -64,15 +71,22 @@ public class Robot extends TimedRobot {
   private final I2C.Port i2cPort = I2C.Port.kOnboard;
 
   // Pneumatics  
-  private Solenoid solenoid = new Solenoid(IDs.kPneumatics, 0);
+  private DoubleSolenoid intakeSolenoid = new DoubleSolenoid(IDs.kPneumatics, 0, 1);
 
   // Encoders
   private double encoderPosition = driveFR.getSensorCollection().getIntegratedSensorPosition();
 
+  // Internal Game Piece Sensors
+  // private DigitalInput pcSensor0 = new DigitalInput(0);
+  // private DigitalInput pcSensor1 = new DigitalInput(1);
+  // private DigitalInput pcSensor2 = new DigitalInput(2);
+
+  private Spark ledController = new Spark(0);
+
   @Override
   public void robotInit() {
     
-    // Invert left motors
+    // Invert left drive motors
     driveFL.setInverted(true);
     driveRL.setInverted(true);
 
@@ -82,9 +96,12 @@ public class Robot extends TimedRobot {
     driveRR.getSensorCollection().setIntegratedSensorPosition(0, 0);
     driveRL.getSensorCollection().setIntegratedSensorPosition(0, 0);
 
-    // Set rear motors to follow front motors
+    // Set rear drive motors to follow front drive motors
     driveRL.follow(driveFL);
     driveRR.follow(driveFR);
+
+    // Invert right climber motor
+    // climberMotorR.setInverted(true);
 
     // Reset gyro 
     m_gyro.reset();
@@ -116,6 +133,8 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
+    // Set inital solenoid value
+    intakeSolenoid.set(Value.kReverse);
   }
 
   @Override
@@ -158,9 +177,9 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Limelight TY", ty);
     SmartDashboard.putNumber("Limelight TA", ta);
     SmartDashboard.putNumber("Target Distance", tDistance);
-
-    // Toggle limelight driver camera on gamepad left bumper pressed
-    if (m_gamepad.getRawButtonPressed(IDs.ControllerIDs.LEFT_BUMPER_BUTTON)) {
+    
+    // Toggle limelight driver camera on joystick fire 3 pressed
+    if (m_joystick.getRawButtonPressed(IDs.JoystickIDs.FIRE_3)) {
       if (cm == 1) {
         llTableCM.setNumber(0);
       } else if (cm == 0) {
@@ -177,25 +196,59 @@ public class Robot extends TimedRobot {
       shooterMotorR.set(0);
     }
 
-
-    // Drive intake motor in on gamepad A button pressed and out on gamepad X button pressed
-
-    intakeMotorSpeed = 0;
-    hopperMotorSpeed = 0;
-
-    if(m_gamepad.getRawButton(IDs.ControllerIDs.A_BUTTON)){
-      intakeMotorSpeed = 1.0;
-      hopperMotorSpeed = -0.3;
-    } else if (m_gamepad.getRawButton(IDs.ControllerIDs.X_BUTTON)){
-      intakeMotorSpeed = -1.0;
-      hopperMotorSpeed = -0.3;
+    // Toggle intake solenoid position on gamepad B button pressed
+    if(m_gamepad.getRawButtonPressed(IDs.ControllerIDs.B_BUTTON)){
+      if(!intakeSolenoid.get().equals(Value.kForward)){
+        intakeSolenoid.set(Value.kForward);      
+      } else {
+        intakeSolenoid.set(Value.kReverse);
+      }
     }
 
+    // Reset intake/hopper/index motor speeds
+    intakeMotorSpeed = 0.0;
+    hopperMotorSpeed = 0.0;
+    indexMotorSpeed = 0.0;
+    
+    // Enable intake/hopper/index motors on gamepad A button pressed
+    if(m_gamepad.getRawButton(IDs.ControllerIDs.A_BUTTON)){
+
+      // Invert speeds on gamepad left bumper pressed
+      if(!m_gamepad.getRawButton(IDs.ControllerIDs.LEFT_BUMPER_BUTTON)){
+
+        // Enable index motors if power cell is not detected by the top index sensor and the shooter speed isn't 0
+        //if(!pcSensor2.get() || shooterMotorL.get() != 0){
+          indexMotorSpeed = -1.0;
+        //}
+
+        intakeMotorSpeed = 1.0;
+        hopperMotorSpeed = -0.3;
+
+      } else { 
+        intakeMotorSpeed = -1.0;
+        hopperMotorSpeed = -0.3;
+        indexMotorSpeed = 1.0;
+      }
+      
+    }
+
+    // Drive intake/hopper motors
     intakeMotor.set(intakeMotorSpeed);
     hopperMotor.set(hopperMotorSpeed);
+    indexMotor.set(indexMotorSpeed);
+
+    // if(m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_TRIGGER_AXIS) > 0.08){
+    //   climberMotorR.set(m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_TRIGGER_AXIS));
+    //   climberMotorL.set(m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_TRIGGER_AXIS));
+    // }
+
+    // if(m_gamepad.getRawAxis(IDs.ControllerIDs.RIGHT_TRIGGER_AXIS) > 0.08){
+    //   climberMotorR.set(-m_gamepad.getRawAxis(IDs.ControllerIDs.RIGHT_TRIGGER_AXIS));
+    //   climberMotorL.set(-m_gamepad.getRawAxis(IDs.ControllerIDs.RIGHT_TRIGGER_AXIS));
+    // }
     
     // Main drive
-    if (m_joystick.getRawButton(IDs.ControllerIDs.RIGHT_BUMPER_BUTTON)) {
+    if (m_joystick.getRawButton(IDs.JoystickIDs.FIRE_2)) {
       // Turn on limelight
       llTableLM.setNumber(0);
 
