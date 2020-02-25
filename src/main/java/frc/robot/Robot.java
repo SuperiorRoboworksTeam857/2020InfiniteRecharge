@@ -8,7 +8,9 @@
 
 package frc.robot;
 
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
 import edu.wpi.first.wpilibj.I2C;
@@ -25,7 +27,6 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 
 public class Robot extends TimedRobot {
@@ -42,15 +43,16 @@ public class Robot extends TimedRobot {
 
   // Game Piece Manipulation
   private WPI_VictorSPX intakeMotor = new WPI_VictorSPX(IDs.kIntake);
-  private WPI_VictorSPX indexMotor = new WPI_VictorSPX(IDs.kIndexer);
+  private WPI_VictorSPX indexMotor  = new WPI_VictorSPX(IDs.kIndexer);
   private WPI_VictorSPX hopperMotor = new WPI_VictorSPX(IDs.kHopper);
   
   private CANSparkMax shooterMotorL = new CANSparkMax(IDs.kShooterL, MotorType.kBrushless);
   private CANSparkMax shooterMotorR = new CANSparkMax(IDs.kShooterR, MotorType.kBrushless);
 
-  // private WPI_TalonSRX climberMotorL = new WPI_TalonSRX(-1);
-  // private WPI_TalonSRX climberMotorR = new WPI_TalonSRX(-1);
-  // private WPI_TalonSRX climberLiftMotor = new WPI_TalonSRX(-1);
+  // TODO : Update IDs
+  private WPI_TalonSRX climberMotorL = new WPI_TalonSRX(-1);
+  private WPI_TalonSRX climberMotorR = new WPI_TalonSRX(-1);
+  private WPI_TalonSRX climberLiftMotor = new WPI_TalonSRX(-1);
 
   // Field Element Dimentional Information
   private static final double kTargetHeight = 98.25;
@@ -237,15 +239,42 @@ public class Robot extends TimedRobot {
     hopperMotor.set(hopperMotorSpeed);
     indexMotor.set(indexMotorSpeed);
 
-    // if(m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_TRIGGER_AXIS) > 0.08){
-    //   climberMotorR.set(m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_TRIGGER_AXIS));
-    //   climberMotorL.set(m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_TRIGGER_AXIS));
-    // }
+    if(m_gamepad.getRawAxis(IDs.ControllerIDs.RIGHT_TRIGGER_AXIS) > 0.08){
 
-    // if(m_gamepad.getRawAxis(IDs.ControllerIDs.RIGHT_TRIGGER_AXIS) > 0.08){
-    //   climberMotorR.set(-m_gamepad.getRawAxis(IDs.ControllerIDs.RIGHT_TRIGGER_AXIS));
-    //   climberMotorL.set(-m_gamepad.getRawAxis(IDs.ControllerIDs.RIGHT_TRIGGER_AXIS));
-    // }
+      climberMotorL.setNeutralMode(NeutralMode.Coast);
+      climberMotorR.setNeutralMode(NeutralMode.Coast);
+
+      if(m_gamepad.getRawButton(IDs.ControllerIDs.LEFT_BUMPER_BUTTON)){
+        climberLiftMotor.set(-m_gamepad.getRawAxis(IDs.ControllerIDs.RIGHT_TRIGGER_AXIS));
+      } else {
+        climberLiftMotor.set(m_gamepad.getRawAxis(IDs.ControllerIDs.RIGHT_TRIGGER_AXIS));
+      }
+
+    } else {
+      climberMotorL.setNeutralMode(NeutralMode.Brake);
+      climberMotorR.setNeutralMode(NeutralMode.Brake);
+
+      climberLiftMotor.set(0);
+
+      if(m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_TRIGGER_AXIS) > 0.08){
+
+      climberLiftMotor.setNeutralMode(NeutralMode.Coast);
+
+      if(m_gamepad.getRawButton(IDs.ControllerIDs.LEFT_BUMPER_BUTTON)){
+        climberMotorL.set(-m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_TRIGGER_AXIS));
+        climberMotorR.set(-m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_TRIGGER_AXIS));
+      } else {
+        climberMotorL.set(m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_TRIGGER_AXIS));
+        climberMotorR.set(m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_TRIGGER_AXIS));
+      }
+
+    } else {
+      climberLiftMotor.setNeutralMode(NeutralMode.Brake);
+
+      climberMotorL.set(0);
+      climberMotorR.set(0);
+      }
+    }
     
     // Main drive
     if (m_joystick.getRawButton(IDs.JoystickIDs.FIRE_2)) {
