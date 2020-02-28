@@ -398,7 +398,7 @@ public class Robot extends TimedRobot {
     if (m_gamepad.getRawButton(IDs.ControllerIDs.A_BUTTON)) {
 
       // Invert speeds on gamepad left bumper pressed, else normal
-      if (!m_gamepad.getRawButton(IDs.ControllerIDs.RIGHT_BUMPER_BUTTON) {
+      if (!m_gamepad.getRawButton(IDs.ControllerIDs.RIGHT_BUMPER_BUTTON)) {
 
         // Enable index motors if power cell is not detected by the top index sensor and
         // the shooter speed isn't 0
