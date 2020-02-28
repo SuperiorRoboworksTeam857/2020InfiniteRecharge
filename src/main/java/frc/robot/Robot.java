@@ -20,86 +20,93 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 
-public class Robot extends TimedRobot {
+public class Robot extends TimedRobot implements Systems {
 
   // Driver Input
   private Joystick m_joystick = new Joystick(IDs.kJoystick);
   private Joystick m_gamepad = new Joystick(IDs.kGamepad);
 
   // Drive Motors
-  private WPI_TalonFX driveFL = new WPI_TalonFX(IDs.kFrontLeftChannel);
-  private WPI_TalonFX driveRL = new WPI_TalonFX(IDs.kRearLeftChannel);
-  private WPI_TalonFX driveFR = new WPI_TalonFX(IDs.kFrontRightChannel);
-  private WPI_TalonFX driveRR = new WPI_TalonFX(IDs.kRearRightChannel);
+  public WPI_TalonFX m_driveFL = new WPI_TalonFX(IDs.kFrontLeftChannel);
+  public WPI_TalonFX m_driveRL = new WPI_TalonFX(IDs.kRearLeftChannel);
+  public WPI_TalonFX m_driveFR = new WPI_TalonFX(IDs.kFrontRightChannel);
+  public WPI_TalonFX m_driveRR = new WPI_TalonFX(IDs.kRearRightChannel);
 
   // Game Piece Manipulation
-  private WPI_VictorSPX intakeMotor = new WPI_VictorSPX(IDs.kIntake);
-  private WPI_VictorSPX indexMotor = new WPI_VictorSPX(IDs.kIndexer);
-  private WPI_VictorSPX hopperMotor = new WPI_VictorSPX(IDs.kHopper);
+  private WPI_VictorSPX m_intakeMotor = new WPI_VictorSPX(IDs.kIntake);
+  private WPI_VictorSPX m_indexMotor = new WPI_VictorSPX(IDs.kIndexer);
+  private WPI_VictorSPX m_hopperMotor = new WPI_VictorSPX(IDs.kHopper);
 
-  private CANSparkMax shooterMotorL = new CANSparkMax(IDs.kShooterL, MotorType.kBrushless);
-  private CANSparkMax shooterMotorR = new CANSparkMax(IDs.kShooterR, MotorType.kBrushless);
+  // - Shooter
+  private CANSparkMax m_shooterMotorL = new CANSparkMax(IDs.kShooterL, MotorType.kBrushless);
+  private CANSparkMax m_shooterMotorR = new CANSparkMax(IDs.kShooterR, MotorType.kBrushless);
 
-  // TODO : Check IDs
-  private WPI_TalonSRX climberMotorR = new WPI_TalonSRX(23);
-  private WPI_TalonSRX climberLiftMotor = new WPI_TalonSRX(24);
+  // Climber
+  private WPI_TalonSRX m_climberLiftMotor = new WPI_TalonSRX(24);
+  private WPI_TalonSRX m_climberMotorR = new WPI_TalonSRX(23);
   private WPI_TalonSRX climberMotorL = new WPI_TalonSRX(25);
-
-  // Field Element Dimentional Information
-  private static final double kTargetHeight = 98.25;
-
-  // Motor Output Speeds/Limits
-  private double speedMultiplier = 0.5;
-  private double speedMultiplierTurbo = 0.6;
-  private double shooterSpeed = 0.9; // at one tick out speed 0.685l
-  private final double kMaxDriveOutput = 0.6;
 
   // Sensors
   private ADXRS450_Gyro m_gyro = new ADXRS450_Gyro();
-  private final I2C.Port i2cPort = I2C.Port.kOnboard;
-
-  // Pneumatics
-  private DoubleSolenoid intakeSolenoid = new DoubleSolenoid(IDs.kPneumatics, 0, 1);
+  private final I2C.Port m_i2c = I2C.Port.kOnboard;
 
   // Internal Game Piece Sensors
-  // private DigitalInput pcSensor0 = new DigitalInput(0);
-  // private DigitalInput pcSensor1 = new DigitalInput(1);
-  // private DigitalInput pcSensor2 = new DigitalInput(2);
+  private DigitalInput m_indexSensor0 = new DigitalInput(0);
+  private DigitalInput m_indexSensor1 = new DigitalInput(1);
+  private DigitalInput m_indexSensor2 = new DigitalInput(2);
+
+  // Pneumatics
+  private DoubleSolenoid m_intakeSolenoid = new DoubleSolenoid(IDs.kPneumatics, 0, 1);
 
   // LED Controller
-  private Spark ledController = new Spark(0);
+  private Spark m_ledController = new Spark(0);
 
-  // Auton
-  private Timer autonTimer = new Timer();
-  private int autonStage = 0;
-  private final double encoderTicksPerInch = (2048  * 10.71) / (Math.PI * 6);
+  // Autonomous
+  private Timer m_autonTimer = new Timer();
+  private int m_autonStage = 0;
+  private final double kEncoderTicksPerInch = (2048  * 10.71) / (Math.PI * 6);
+
+  // Field Element Dimensions
+  private final double kTargetHeight = 98.25;
+
+  // Robot Dimensions
+  private final double kLimelightHeight = -1.0; // TODO: Update when limelight mounted
+  private final double kLimelightAngle = -1.0; // TODO: Update when limelight mounted
+
+  // Motor Output Speeds/Limits
+  private final double kDriveSpeedMultipliter = 0.5;
+  private final double kDriveSpeedMultipliterTurbo = 0.6;
+  private final double kMaxDriveOutput = 0.6;
+  private final double kShooterSpeed = -0.9; // at one tick out speed 0.685l
+  private final double kIndexSpeed = 1.0;
+  private final double kHopperSpeed = -0.3;
+  private final double kIntakeSpeed = -1.0;
 
   @Override
   public void robotInit() {
 
     // Invert left drive motors
-    driveFL.setInverted(true);
-    driveRL.setInverted(true);
+    m_driveFL.setInverted(true);
+    m_driveRL.setInverted(true);
 
     // Set rear drive motors to follow front drive motors
-    driveRL.follow(driveFL);
-    driveRR.follow(driveFR);
+    m_driveRL.follow(m_driveFL);
+    m_driveRR.follow(m_driveFR);
 
     // Reset encoder positions
     resetEncoders();
 
     // Invert right climber motor
-    climberMotorR.setInverted(true);
+    m_climberMotorR.setInverted(true);
 
     // Reset gyro
     m_gyro.calibrate();
@@ -109,13 +116,24 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
 
-    // Put gyro angle on SmartDashboard
+    // TESTING - Put gyro angle on SmartDashboard
     SmartDashboard.putNumber("gyro angle", m_gyro.getAngle());
 
-    SmartDashboard.putNumber("L encoder", driveFL.getSensorCollection().getIntegratedSensorPosition());
-    SmartDashboard.putNumber("R encoder", driveFR.getSensorCollection().getIntegratedSensorPosition());
-    SmartDashboard.putNumber("shooter speed L", shooterMotorL.getEncoder().getVelocity());
-    SmartDashboard.putNumber("shooter speed R", shooterMotorR.getEncoder().getVelocity());
+    // TESTING - Put encoder values on SmartDashboard
+    SmartDashboard.putNumber("L encoder", m_driveFL.getSensorCollection().getIntegratedSensorPosition());
+    SmartDashboard.putNumber("R encoder", m_driveFR.getSensorCollection().getIntegratedSensorPosition());
+    SmartDashboard.putNumber("L shooter speed", m_shooterMotorL.getEncoder().getVelocity());
+    SmartDashboard.putNumber("R shooter speed", m_shooterMotorR.getEncoder().getVelocity());
+
+    // TESTING - Put limelight values on SmartDashboard
+    SmartDashboard.putNumber("limelight TX", getLimelightValue("tx")); // Difference of X axis angles between crosshairs
+    SmartDashboard.putNumber("limelight TY", getLimelightValue("ty")); // Difference of Y axis angles between crosshairs
+    SmartDashboard.putNumber("limelight TA", getLimelightValue("ta")); // Area of target
+    SmartDashboard.putNumber("limelight cam", getLimelightValue("camMode")); // Camera mode [0 = VISION | 1 = DRIVER CAM]
+    SmartDashboard.putNumber("limelight led", getLimelightValue("ledMode")); // LED Mode [0 = DEFAULT | 1 = FORCE OFF | 2 = FORCE BLINK | 3 = FORCE ON]
+
+    SmartDashboard.putNumber("target distance", getLimelightValue("tDistance")); // Distance from target
+
   }
 
   @Override
@@ -124,11 +142,11 @@ public class Robot extends TimedRobot {
     resetEncoders();
 
     // Reset auton timer
-    autonTimer.start();
-    autonTimer.reset();
+    m_autonTimer.start();
+    m_autonTimer.reset();
 
     // Set auton stage to stage 0
-    autonStage = 0;
+    m_autonStage = 0;
 
     // Set all motor speeds to 0
     stopAll();
@@ -137,72 +155,70 @@ public class Robot extends TimedRobot {
     m_gyro.reset();
 
     // Set intake arm to reversed position
-    intakeSolenoid.set(Value.kReverse);
+    setIntakeArm(Value.kReverse);
   }
 
   @Override
   public void autonomousPeriodic() {
 
-    switch(autonStage){
-      case(0):
-        shooterMotorL.set(-shooterSpeed);
-        shooterMotorR.set(-shooterSpeed);
+    switch(m_autonStage){
+      case(0): // Stage 0: Start ramping up shooter
+        enableShooter(true);
 
-        if(shooterMotorR.getEncoder().getVelocity() <= -4000 || autonTimer.get() > 5){
+        if(m_shooterMotorR.getEncoder().getVelocity() <= -4000 || m_autonTimer.get() > 5){
           setAutonStage(1);
         }
 
         break;
-      case(1):
-        indexMotor.set(-1);
-        shooterMotorL.set(-shooterSpeed);
-        shooterMotorR.set(-shooterSpeed);
+      case(1): // Stage 1: Fire starting payload
+        enableIndexer(true);
+        enableShooter(true);
 
-        if(autonTimer.get() > 3){
+        if(m_autonTimer.get() > 3){
           setAutonStage(2);
         }
 
         break;
-      case (2): 
-        indexMotor.set(0);
-        shooterMotorL.set(0);
-        shooterMotorR.set(0);
+      case (2): // Stage 2: Stop shooter and turn to face trench run 
+        enableIndexer(false);
+        enableShooter(false);
       
         if(turnTo(130, 2)){
           setAutonStage(3);
         }
 
         break;
-      case (3): 
+      case (3): // Stage 3: Move to trench run
         if(moveTo(100, 3)){
           setAutonStage(4);
         }
+        
         break;
-
-      case (4): 
+      case (4): // Stage 4: Align to trench run 
         if(turnTo(50, 2)){
           setAutonStage(5);
         }
-        break;
-      case (5): 
-        stopAll();
-        intakeSolenoid.set(Value.kForward);
 
-        if(autonTimer.get() >= 2){
+        break;
+      case (5): // Stage 5: Drop intake
+        stopAll();
+        setIntakeArm(Value.kForward);
+
+        if(m_autonTimer.get() >= 2){
           setAutonStage(6);
         }
         
         break;
-      case (6): 
-        intakeMotor.set(1.0);
+      case (6): // Stage 6: Start intake and move forward, collecting powercells
+        enableIntake(true);  
 
         if(moveTo(123, 4)){
           setAutonStage(7);
         }        
 
         break;
-      case(7):
-      intakeMotor.set(1.0);
+      case(7): // Stage 7: Stop intake and move back to start of trench run
+        enableIntake(true);
 
         if(moveTo(-123, 4)){
           setAutonStage(8);
@@ -213,116 +229,6 @@ public class Robot extends TimedRobot {
         stopAll();
         break;
     }
-  }
-
-  private void setAutonStage(int stage){
-    resetEncoders();
-
-    autonTimer.reset();
-    m_gyro.reset();
-
-    autonStage = stage;
-  }
-
-  private void resetEncoders(){
-    driveFR.getSensorCollection().setIntegratedSensorPosition(0, 0);
-    driveFL.getSensorCollection().setIntegratedSensorPosition(0, 0);
-    driveRR.getSensorCollection().setIntegratedSensorPosition(0, 0);
-    driveRL.getSensorCollection().setIntegratedSensorPosition(0, 0);
-  }
-
-  private void stopAll(){
-
-    // Stop all drive motors
-    setDrive(0);
-
-    shooterMotorR.set(0);
-    shooterMotorL.set(0);
-
-    intakeMotor.set(0);
-    indexMotor.set(0);
-    hopperMotor.set(0);
-
-    climberLiftMotor.set(0);
-    climberMotorR.set(0);
-    climberMotorL.set(0);
-  }
-
-  private boolean moveTo(double in, double timeout){
-
-    final double kP = 0.00001;
-
-    boolean complete = false;
-
-    double encoderAvg = (-driveFR.getSensorCollection().getIntegratedSensorPosition() +
-                         driveFL.getSensorCollection().getIntegratedSensorPosition()) / 2;
-
-    double setpoint = in * encoderTicksPerInch;
-    double err = setpoint - encoderAvg;
-    double speed = err * kP;
-
-    SmartDashboard.putNumber("encoderAvg", encoderAvg);
-    SmartDashboard.putNumber("err", err);
-    SmartDashboard.putNumber("setpoint", setpoint);
-    SmartDashboard.putNumber("speed", speed);
-
-    if(Math.abs(err) > 200 && autonTimer.get() < timeout){
-      setDrive(-speed);
-
-    } else {
-      complete = true;
-    }
-
-    return complete;
-  }
-
-  private boolean turnTo(double degrees, double timeout){
-
-    boolean complete = false;
-
-    double gyroAngle = m_gyro.getAngle();
-
-    final double kP = 0.005;
-    double setpoint = degrees;
-    setpoint = degrees;
-
-    if(setpoint > 180){
-      setpoint = -(360 - setpoint);
-    } else if (setpoint < -180){
-      setpoint = 360 + setpoint;
-    }
-
-    double err = setpoint - gyroAngle;
-    double speed = err * kP;
-
-    SmartDashboard.putNumber("rotate err", err);
-    SmartDashboard.putNumber("rotate speed", speed);
-
-    if(Math.abs(err) > 2 && autonTimer.get() < timeout){
-      setDriveRotate(-speed);
-    } else {
-      complete = true;
-    }
-
-    return complete;
-  }
-
-  private boolean turnToTarget(){
-
-    boolean complete = false;
-
-    NetworkTable netTable = NetworkTableInstance.getDefault().getTable("limelight");
-
-    double tx = netTable.getEntry("tx").getDouble(0.0);
-    double ledMode = netTable.getEntry("ledMode").getDouble(-1.0);
-
-    if(Math.abs(tx) > 4.0){
-
-      setDriveRotate(-(tx/26) * 0.6);
-
-    } else complete = true;
-
-    return complete;
   }
 
   @Override
@@ -345,182 +251,329 @@ public class Robot extends TimedRobot {
     speedL -= m_joystick.getRawAxis(IDs.JoystickIDs.TWIST_AXIS) * 0.75;
     speedR += m_joystick.getRawAxis(IDs.JoystickIDs.TWIST_AXIS) * 0.75;
 
-    // Limelight network table
-    NetworkTable llTable = NetworkTableInstance.getDefault().getTable("limelight");
-
-    NetworkTableEntry llTableTX = llTable.getEntry("tx"); // Difference of X axis angles between crosshairs
-    NetworkTableEntry llTableTY = llTable.getEntry("ty"); // Difference of Y axis angles between crosshairs
-    NetworkTableEntry llTableTA = llTable.getEntry("ta"); // Area of target
-    NetworkTableEntry llTableCM = llTable.getEntry("camMode"); // Camera mode [0 = VISION | 1 = DRIVER CAM]
-    NetworkTableEntry llTableLM = llTable.getEntry("ledMode"); // LED Mode [0 = DEFAULT | 1 = FORCE OFF]
-
-    // Parse network table data
-    double tx = llTableTX.getDouble(0.0);
-    double ty = llTableTY.getDouble(0.0);
-    double ta = llTableTA.getDouble(0.0);
-    double cm = llTableCM.getDouble(-1.0);
-    double lm = llTableLM.getDouble(-1.0);
-
-    // Distance from limelight to target base using formula d = (h2 - h1) / tan(a1 +
-    // a2)
-    double tDistance = (kTargetHeight - 22.0) / Math.tan(Math.toRadians(20.0 + ty));
-
-    // Put limelight values on Smart Dashboard
-    SmartDashboard.putNumber("Limelight TX", tx);
-    SmartDashboard.putNumber("Limelight TY", ty);
-    SmartDashboard.putNumber("Limelight TA", ta);
-    SmartDashboard.putNumber("Target Distance", tDistance);
-
     // Toggle limelight driver camera on joystick fire 3 pressed
     if (m_joystick.getRawButtonPressed(IDs.JoystickIDs.FIRE_3)) {
-      if (cm == 1) {
-        llTableCM.setNumber(0);
-      } else if (cm == 0) {
-        llTableCM.setNumber(1);
+      toggleDriverCam();
+    }
+
+    // Toggle intake solenoid position on gamepad B button pressed
+    if (m_gamepad.getRawButtonPressed(IDs.ControllerIDs.B_BUTTON)) {
+      if (!m_intakeSolenoid.get().equals(Value.kForward)) {
+        setIntakeArm(Value.kForward);
+      } else {
+        setIntakeArm(Value.kReverse);
       }
     }
 
     // Drive shooter motors on gamepad Y button pressed
     if (m_gamepad.getRawButton(IDs.ControllerIDs.Y_BUTTON)) {
-      shooterMotorL.set(-shooterSpeed);
-      shooterMotorR.set(-shooterSpeed);
+      enableShooter(true);
     } else {
-      shooterMotorL.set(0);
-      shooterMotorR.set(0);
+      enableShooter(false);
     }
 
-    // Toggle intake solenoid position on gamepad B button pressed
-    if (m_gamepad.getRawButtonPressed(IDs.ControllerIDs.B_BUTTON)) {
-      if (!intakeSolenoid.get().equals(Value.kForward)) {
-        intakeSolenoid.set(Value.kForward);
-      } else {
-        intakeSolenoid.set(Value.kReverse);
-      }
+    if (m_gamepad.getRawButton(IDs.ControllerIDs.X_BUTTON)) {
+      enableIntake(true);
+    } else {
+      enableIntake(false);
     }
 
-    // Reset intake/hopper/index motor speeds
-    double intakeMotorSpeed = 0.0;
-    double hopperMotorSpeed = 0.0;
-    double indexMotorSpeed = 0.0;
-
-    // Enable intake/hopper/index motors on gamepad A button pressed
     if (m_gamepad.getRawButton(IDs.ControllerIDs.A_BUTTON)) {
-
-      // Invert speeds on gamepad left bumper pressed, else normal
-      if (!m_gamepad.getRawButton(IDs.ControllerIDs.RIGHT_BUMPER_BUTTON)) {
-
-        // Enable index motors if power cell is not detected by the top index sensor and
-        // the shooter speed isn't 0
-        // if(!pcSensor2.get() || shooterMotorL.get() != 0){
-        indexMotorSpeed = -1.0;
-        // }
-
-        intakeMotorSpeed = 1.0;
-        hopperMotorSpeed = -0.3;
-
-      } else {
-        intakeMotorSpeed = -1.0;
-        hopperMotorSpeed = -0.3;
-        indexMotorSpeed = 1.0;
-      }
+      enableIndexer(true);
+    } else {
+      enableIndexer(false);
     }
-
-    // Drive intake/hopper motors
-    intakeMotor.set(intakeMotorSpeed);
-    hopperMotor.set(hopperMotorSpeed);
-    indexMotor.set(indexMotorSpeed);
 
     // Climber
     if(m_gamepad.getRawButton(IDs.ControllerIDs.LEFT_BUMPER_BUTTON)){
 
       // Ensure climber lift motor is disabled
-      climberLiftMotor.set(0);
+      setClimberLift(0);
 
       // Put climber lift motor in coast
-      climberLiftMotor.setNeutralMode(NeutralMode.Coast);
+      m_climberLiftMotor.setNeutralMode(NeutralMode.Coast);
 
       // Enable climber motors
-      climberMotorL.set(0.2);
-      climberMotorR.set(0.2);
+      setClimber(0.2);
 
     } else {
       // Climber Lift
 
       // Ensure climber motors are not running
-      climberMotorL.set(0);
-      climberMotorR.set(0);
+      setClimber(0);
 
       // Put climber motors in coast
       climberMotorL.setNeutralMode(NeutralMode.Coast);
-      climberMotorR.setNeutralMode(NeutralMode.Coast);
+      m_climberMotorR.setNeutralMode(NeutralMode.Coast);
 
       // Move climber up on gamepad right trigger, down on gamepad left trigger, else disable
       if(m_gamepad.getRawAxis(IDs.ControllerIDs.RIGHT_TRIGGER_AXIS) > 0.08){
-        climberLiftMotor.set(m_gamepad.getRawAxis(IDs.ControllerIDs.RIGHT_TRIGGER_AXIS) * 0.1);
+        setClimberLift(m_gamepad.getRawAxis(IDs.ControllerIDs.RIGHT_TRIGGER_AXIS) * 0.1);
 
       } else if (m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_TRIGGER_AXIS) > 0.08){
-        climberLiftMotor.set(-m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_TRIGGER_AXIS) * 0.1);
+        setClimberLift(-m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_TRIGGER_AXIS) * 0.1);
 
       } else {
-        climberLiftMotor.set(0);
+        setClimberLift(0);
       }
     }
 
     // Main drive
     if (m_joystick.getRawButton(IDs.JoystickIDs.FIRE_2)) {
+      
       // Turn on limelight
-      llTableLM.setNumber(0);
+      enableLimelight(true);
 
-      // Turn to target when horizontal angle from bot crosshair to target center is
-      // greater than 4 degrees
-      if (Math.abs(tx) > 4.0) {
-        setDriveRotate(-((tx / 26) * 0.6));
-      }
+      // Turn to target
+      turnToTarget();
+
     } else {
+
       // Turn off limelight
-      llTableLM.setNumber(1);
+      enableLimelight(false);
 
       // Drive with turbo speed on joystick trigger button pressed, else drive normal
       if (m_joystick.getRawButton(IDs.JoystickIDs.TRIGGER_BUTTON)) {
-        setDrive(speedL * speedMultiplierTurbo, speedR * speedMultiplierTurbo);
+        setDrive(speedL * kDriveSpeedMultipliterTurbo, speedR * kDriveSpeedMultipliterTurbo);
       } else {
-        setDrive(speedL * speedMultiplier, speedR * speedMultiplier);
+        setDrive(speedL * kDriveSpeedMultipliter, speedR * kDriveSpeedMultipliter);
       }
+
     }
   }
 
   @Override
   public void disabledInit() {
-    NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
+    enableLimelight(true);
+  }
+
+  private void setAutonStage(int stage){
+    resetEncoders();
+
+    m_autonTimer.reset();
+    m_gyro.reset();
+
+    m_autonStage = stage;
+  }
+
+  private void resetEncoders(){
+    m_driveFR.getSensorCollection().setIntegratedSensorPosition(0, 0);
+    m_driveFL.getSensorCollection().setIntegratedSensorPosition(0, 0);
+    m_driveRR.getSensorCollection().setIntegratedSensorPosition(0, 0);
+    m_driveRL.getSensorCollection().setIntegratedSensorPosition(0, 0);
+  }
+
+  private void stopAll(){
+      // Stop all drive motors
+      setDrive(0);
+
+      // Stop shooter
+      enableShooter(false);
+
+      // Stop intake/indexer/hopper
+      enableIntake(false);
+      enableIndexer(false);
+      enableHopper(false);
+
+      // Stop all climber motors
+      setClimberLift(0);
+      setClimber(0);
+  }
+
+  private boolean moveTo(double in, double timeout){
+
+      final double kP = 0.00001;
+
+      boolean complete = false;
+
+      double encoderAvg = (-m_driveFR.getSensorCollection().getIntegratedSensorPosition() +
+                          m_driveFL.getSensorCollection().getIntegratedSensorPosition()) / 2;
+
+      double setpoint = in * kEncoderTicksPerInch;
+      double err = setpoint - encoderAvg;
+      double speed = err * kP;
+
+      SmartDashboard.putNumber("encoderAvg", encoderAvg);
+      SmartDashboard.putNumber("err", err);
+      SmartDashboard.putNumber("setpoint", setpoint);
+      SmartDashboard.putNumber("speed", speed);
+
+      if(Math.abs(err) > 200 && m_autonTimer.get() < timeout){
+      setDrive(-speed);
+
+      } else {
+      complete = true;
+      }
+
+      return complete;
+  }
+
+  private boolean turnTo(double degrees, double timeout){
+
+      boolean complete = false;
+
+      double gyroAngle = m_gyro.getAngle();
+
+      final double kP = 0.005;
+      double setpoint = degrees;
+      setpoint = degrees;
+
+      if(setpoint > 180){
+      setpoint = -(360 - setpoint);
+      } else if (setpoint < -180){
+      setpoint = 360 + setpoint;
+      }
+
+      double err = setpoint - gyroAngle;
+      double speed = err * kP;
+
+      SmartDashboard.putNumber("rotate err", err);
+      SmartDashboard.putNumber("rotate speed", speed);
+
+      if(Math.abs(err) > 2 && m_autonTimer.get() < timeout){
+      setDriveRotate(-speed);
+      } else {
+      complete = true;
+      }
+
+      return complete;
+  }
+
+  private boolean turnToTarget(){
+
+      boolean complete = false;
+
+      double tx = getLimelightValue("tx");
+
+      if(Math.abs(tx) > 4.0){
+      setDriveRotate(-(tx/26) * 0.6);
+      } else{
+      complete = true;
+      }
+      return complete;
   }
 
   private void setDriveRotate(double speed) {
-    setDrive(speed, -speed);
+      setDrive(speed, -speed);
   }
 
   private void setDrive(double speed) {
-    setDrive(speed, speed);
+      setDrive(speed, speed);
   }
 
   private void setDrive(double speedL, double speedR) {
-    driveFL.set(normalize(speedL));
-    driveFR.set(normalize(speedR));
+      m_driveFL.set(limitSpeed(speedL));
+      m_driveFR.set(limitSpeed(speedR));
   }
 
-  private void setShooter(double speed){
-    shooterMotorL.set(speed);
-    shooterMotorR.set(speed);
+  private void enableShooter(boolean enabled){
+      if(enabled){
+      m_shooterMotorL.set(kShooterSpeed);
+      m_shooterMotorR.set(kShooterSpeed);
+      } else {
+      m_shooterMotorL.set(0);
+      m_shooterMotorR.set(0);
+      }
   }
+
+  private void setIntakeArm(Value position){
+      if(position.equals(Value.kForward)){
+      m_intakeSolenoid.set(Value.kForward);
+      } else if(position.equals(Value.kReverse)){
+      m_intakeSolenoid.set(Value.kReverse);
+      } else {
+      m_intakeSolenoid.set(Value.kOff);
+      }
+  }
+
+  private void enableIntake(boolean enabled){
+      if(enabled){
+      m_intakeMotor.set(kIntakeSpeed);
+      } else {
+      m_intakeMotor.set(0);
+      }
+  }
+
+  private void enableHopper(boolean enabled){
+      if(enabled){
+      m_hopperMotor.set(kHopperSpeed);
+      } else {
+      m_hopperMotor.set(0);
+      }
+  }
+
+  private void enableIndexer(boolean enabled){
+      if(enabled){
+      m_indexMotor.set(kIndexSpeed);
+      } else {
+      m_indexMotor.set(0);
+      }
+  }
+
+  private void setClimberLift(double speed){
+      m_climberLiftMotor.set(speed);
+  }
+
+  private void setClimber(double speed){
+      climberMotorL.set(speed);
+      m_climberMotorR.set(speed);
+  }
+
+  private void enableLimelight(boolean enabled){
+      if(enabled){
+      setLimelightValue("ledMode", 0);
+      } else {
+      setLimelightValue("ledMode", 1);
+      }
+  }
+
+  private void toggleDriverCam(){
+      double currentMode = getLimelightValue("camMode");
+
+      if(currentMode == 0) {
+      setLimelightValue("camMode", 1);
+      } else if(currentMode == 1) {
+      setLimelightValue("camMode", 0);
+      }
+  }
+
+  private double getLimelightValue(String entry){
+
+      double value = -1.0;
+
+      if(entry.equals("tDistance")){
+      value = (kTargetHeight - kLimelightHeight) / Math.tan(Math.toRadians(kLimelightAngle + getLimelightValue("ty")));
+      } else {
+      value = NetworkTableInstance.getDefault().getTable("limelight").getEntry(entry).getDouble(-1.0);
+      }
+
+      return value;
+  }
+
+  private void setLimelightValue(String entry, double value){
+      NetworkTableInstance.getDefault().getTable("limelight").getEntry(entry).setDouble(value);
+  }
+
 
   /**
-   * Limit drive power to maximum speed
    * 
-   * @param d : number to be limited
-   * 
-   *          NOTE: The built in Math function did a spooky so this is what were
-   *          using now, k? k.
+   * @param mode 0 = default | 1 = rainbow | 2 = solid red | 3 = solid green | 4 = chasing green (shooter)
    */
-  private double normalize(double d) {
+  private void setLEDs(int mode){
+      if(mode == 0){
+      m_ledController.set(0);
+      } else if (mode == 1){
+      m_ledController.set(-0.99);
+      } else if (mode == 2){
+      m_ledController.set(0.61);
+      } else if (mode == 3){
+      m_ledController.set(0.77);
+      } else if (mode == 4){
+      m_ledController.set(0.13);
+      }
+  }
+
+  private double limitSpeed(double d) {
     if (d > kMaxDriveOutput) {
       d = kMaxDriveOutput;
     } else if (d < -kMaxDriveOutput) {
