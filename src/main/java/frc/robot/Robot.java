@@ -64,10 +64,6 @@ public class Robot extends TimedRobot {
   private double shooterSpeed = 0.9; // at one tick out speed 0.685l
   private final double kMaxDriveOutput = 0.6;
 
-  private double indexMotorSpeed = 0.0;
-  private double intakeMotorSpeed = 0.0;
-  private double hopperMotorSpeed = 0.0;
-
   // Sensors
   private ADXRS450_Gyro m_gyro = new ADXRS450_Gyro();
   private final I2C.Port i2cPort = I2C.Port.kOnboard;
@@ -311,9 +307,22 @@ public class Robot extends TimedRobot {
     return complete;
   }
 
-  private boolean TurnToTarget(){
+  private boolean turnToTarget(){
 
-    return false;
+    boolean complete = false;
+
+    NetworkTable netTable = NetworkTableInstance.getDefault().getTable("limelight");
+
+    double tx = netTable.getEntry("tx").getDouble(0.0);
+    double ledMode = netTable.getEntry("ledMode").getDouble(-1.0);
+
+    if(Math.abs(tx) > 4.0){
+
+      setDriveRotate(-(tx/26) * 0.6);
+
+    } else complete = true;
+
+    return complete;
   }
 
   @Override
@@ -390,9 +399,9 @@ public class Robot extends TimedRobot {
     }
 
     // Reset intake/hopper/index motor speeds
-    intakeMotorSpeed = 0.0;
-    hopperMotorSpeed = 0.0;
-    indexMotorSpeed = 0.0;
+    double intakeMotorSpeed = 0.0;
+    double hopperMotorSpeed = 0.0;
+    double indexMotorSpeed = 0.0;
 
     // Enable intake/hopper/index motors on gamepad A button pressed
     if (m_gamepad.getRawButton(IDs.ControllerIDs.A_BUTTON)) {
@@ -496,6 +505,11 @@ public class Robot extends TimedRobot {
   private void setDrive(double speedL, double speedR) {
     driveFL.set(normalize(speedL));
     driveFR.set(normalize(speedR));
+  }
+
+  private void setShooter(double speed){
+    shooterMotorL.set(speed);
+    shooterMotorR.set(speed);
   }
 
   /**
