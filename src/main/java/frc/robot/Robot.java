@@ -248,7 +248,11 @@ public class Robot extends TimedRobot {
           m_autonTimer.reset();
           break;
       }
+    }else if(autonMode == 1){
     }
+    
+
+    
   }
 
   @Override
@@ -258,12 +262,13 @@ public class Robot extends TimedRobot {
   /* Control Scheme
    *
    * Drive: joystick Y  for forward-backward, twist for rotating
-   * Turbo: joystick triggerd
-   * Align to vision target: joystick fire 2
-   * Toggle limelight driver cam: joystick fire 3
+   * Turbo: fire 4
+   * Align to vision target: joystick fire 3
+   * Toggle limelight driver cam: joystick fire 5
+   * Intake deploy toggle: fire 6
+   * Drive Intake: trigger
+   * Drive Intake Reversed: fire 2
    * 
-   * Intake deploy toggle: gamepad right bumper
-   * Drive Intake + Hopper: Gamepad left trigger
    * Drive Intake Inverted: gamepad left bumper
    * Drive Esophagus: gamepad Y
    * Drive climber lift up: gamepad direction up
@@ -289,7 +294,7 @@ public class Robot extends TimedRobot {
     speedR += m_joystick.getRawAxis(IDs.JoystickIDs.TWIST_AXIS);
 
     // Toggle limelight driver camera on joystick fire 3 pressed
-    if (m_joystick.getRawButtonPressed(IDs.JoystickIDs.FIRE_3)) {
+    if (m_joystick.getRawButtonPressed(IDs.JoystickIDs.FIRE_5)) {
       toggleDriverCam();
     }
 
@@ -301,10 +306,10 @@ public class Robot extends TimedRobot {
     }
 
     // Enable intake/hopper in on gamepad left trigger pulled and out on gamepad left bumper pressed (if intake arm is extended) 
-    if (m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_TRIGGER_AXIS) > 0.2 && m_intakeSolenoid.get().equals(Value.kForward)) {
+    if (m_joystick.getRawButton(IDs.JoystickIDs.TRIGGER_BUTTON) && m_intakeSolenoid.get().equals(Value.kForward)) {
       setIntake(MotorSpeed.FORWARD);
       enableHopper(true);
-    } else if (m_gamepad.getRawButton(IDs.ControllerIDs.LEFT_BUMPER_BUTTON) && m_intakeSolenoid.get().equals(Value.kForward)) {
+    } else if (m_joystick.getRawButton(IDs.JoystickIDs.FIRE_2) && m_intakeSolenoid.get().equals(Value.kForward)) {
       setIntake(MotorSpeed.REVERSE);
       enableHopper(false);
     } else {
@@ -313,7 +318,7 @@ public class Robot extends TimedRobot {
     }
 
     // Toggle intake arm position on gamepad right bumper pressed
-    if (m_gamepad.getRawButtonPressed(IDs.ControllerIDs.RIGHT_BUMPER_BUTTON)) {
+    if (m_joystick.getRawButton(IDs.JoystickIDs.FIRE_6)) {
       if (!m_intakeSolenoid.get().equals(Value.kForward)) {
         setIntakeArm(Value.kForward);
       } else {
@@ -332,12 +337,14 @@ public class Robot extends TimedRobot {
     if (m_gamepad.getPOV() == 90) {
 
       setClimberLift(0);
+      m_climberLiftMotor.setNeutralMode(NeutralMode.Coast);
 
       setClimber(kClimberSpeed);
 
     } else {
 
       setClimber(0);
+      m_climberLiftMotor.setNeutralMode(NeutralMode.Brake);
 
       // Drive climber lift up on gamepad directional up pressed, down on gamepad directional down pressed
       if (m_gamepad.getPOV() == 0) {
@@ -353,7 +360,7 @@ public class Robot extends TimedRobot {
 
     // Main Drive
     // Aim to vision target on joystick fire 2 pressed, else drive standard
-    if (m_joystick.getRawButton(IDs.JoystickIDs.FIRE_2)) {
+    if (m_joystick.getRawButton(IDs.JoystickIDs.FIRE_3)) {
       // Turn on limelight
       enableLimelight(true);
 
@@ -367,7 +374,7 @@ public class Robot extends TimedRobot {
       enableLimelight(false);
 
       // Drive with turbo speed on joystick trigger button pressed, else drive normal speed
-      if (m_joystick.getRawButton(IDs.JoystickIDs.TRIGGER_BUTTON)) {
+      if (m_joystick.getRawButton(IDs.JoystickIDs.FIRE_4)) {
         setDrive(speedL * kDriveSpeedMultipliterTurbo, speedR * kDriveSpeedMultipliterTurbo);
       } else {
         setDrive(speedL * kDriveSpeedMultipliter, speedR * kDriveSpeedMultipliter);
@@ -478,6 +485,10 @@ public class Robot extends TimedRobot {
     boolean complete = false;
 
     double tx = getLimelightValue("tx");
+
+    if(getLimelightValue("camMode") == 1){
+      toggleDriverCam();
+    }
 
     if (Math.abs(tx) > 4.0) {
       setDriveRotate(-(tx / 26) * 0.6);
