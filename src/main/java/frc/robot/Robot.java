@@ -9,6 +9,7 @@
 package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
@@ -54,6 +55,7 @@ public class Robot extends TimedRobot {
   private WPI_TalonSRX m_climberLiftMotor = new WPI_TalonSRX(24);
   private WPI_TalonSRX m_climberMotorR = new WPI_TalonSRX(23);
   private WPI_TalonSRX m_climberMotorL = new WPI_TalonSRX(25);
+  private WPI_VictorSPX m_climberSliderMotor = new WPI_VictorSPX(35);
 
   // Sensors
   private ADXRS450_Gyro m_gyro = new ADXRS450_Gyro();
@@ -85,15 +87,15 @@ public class Robot extends TimedRobot {
   private final double kLimelightAngle = -1.0; // TODO: Update when limelight mounted
 
   // Motor Output Speeds/Limits
-  private final double kDriveSpeedMultipliter = 0.5;
-  private final double kDriveSpeedMultipliterTurbo = 0.6;
-  private final double kMaxDriveOutput = 0.6;
-  private final double kShooterSpeed = -0.9; // at one tick out speed 0.685l
-  private final double kIndexSpeed = -1.0;
+  private final double kDriveSpeedMultipliter = 0.7;
+  private final double kDriveSpeedMultipliterTurbo = 1.0;
+  private final double kMaxDriveOutput = 1.0;
+  private final double kShooterSpeed = -0.95; // at one tick out speed 0.685l
+  private final double kIndexSpeed = -0.9;
   private final double kHopperSpeed = -0.3;
   private final double kIntakeSpeed = 1.0;
-  private final double kClimberLiftSpeed = 0.2;
-  private final double kClimberSpeed = 0.2;
+  private final double kClimberLiftSpeed = 0.7;
+  private final double kClimberSpeed = 1.0;
 
   private static enum MotorSpeed {
     FORWARD, STOPPED, REVERSE;
@@ -168,8 +170,8 @@ public class Robot extends TimedRobot {
     m_autonMode = 0;
 
     for (int i = 3; i < 8; i++) {
-      if (m_autonSelector.getRawButton(i - 3)) {
-        m_autonMode = i;
+      if (m_autonSelector.getRawButton(i)) {
+        m_autonMode = i - 3;
         break;
       }
     }
@@ -192,11 +194,11 @@ public class Robot extends TimedRobot {
       case (1): // Stage 1: Fire starting payload
         enableShooter(true);
 
-        if (turnToTarget()) {
+        //if (turnToTarget()) {
           enableIndexer(true);
-        }
+        //}
 
-        if (m_autonTimer.get() > 3) {
+        if (m_autonTimer.get() > 3.2) {
           setAutonStage(2);
         }
 
@@ -217,7 +219,7 @@ public class Robot extends TimedRobot {
 
         break;
       case (4): // Stage 4: Align to trench run
-        if (turnTo(50, 2)) {
+        if (turnTo(45, 2)) {
           setAutonStage(5);
         }
 
@@ -320,7 +322,7 @@ public class Robot extends TimedRobot {
     }
 
     // Toggle intake arm position on gamepad right bumper pressed
-    if (m_joystick.getRawButton(IDs.JoystickIDs.FIRE_6)) {
+    if (m_joystick.getRawButtonPressed(IDs.JoystickIDs.FIRE_6)) {
       if (!m_intakeSolenoid.get().equals(Value.kForward)) {
         setIntakeArm(Value.kForward);
       } else {
@@ -360,6 +362,8 @@ public class Robot extends TimedRobot {
         setClimberLift(0);
       }
     }
+
+    m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_X_AXIS);
 
     // Main Drive
     // Aim to vision target on joystick fire 2 pressed, else drive standard

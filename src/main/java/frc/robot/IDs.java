@@ -94,7 +94,7 @@ public class IDs {
     // USB Input Devices
     public static final int kJoystick = 0;
     public static final int kGamepad  = 1;
-    public static final int kDSSwitches  = 1;
+    public static final int kDSSwitches  = 2;
     
     // Drive (TalonFX)
     public static final int kRearLeftChannel   = 30;
