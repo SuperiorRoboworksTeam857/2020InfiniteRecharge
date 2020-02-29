@@ -71,7 +71,9 @@ public class Robot extends TimedRobot {
   private Spark m_ledController = new Spark(0);
 
   // Autonomous
+  private Joystick m_autonSelector = new Joystick(IDs.kDSSwitches);
   private Timer m_autonTimer = new Timer();
+  private int autonMode = 0;
   private int m_autonStage = 0;
   private final double kEncoderTicksPerInch = (2048 * 10.71) / (Math.PI * 6);
 
@@ -160,86 +162,115 @@ public class Robot extends TimedRobot {
 
     // Set intake arm to reversed position
     setIntakeArm(Value.kReverse);
+
+    autonMode = 0;
+    
+    for(int i = 3; i < 8; i++){
+      if(m_autonSelector.getRawButton(i - 3)){
+        autonMode = i;
+        break;
+      }
+    }
   }
 
   @Override
   public void autonomousPeriodic() {
 
-    switch (m_autonStage) {
-      case (0): // Stage 0: Start ramping up shooter
-        enableShooter(true);
+    if(autonMode == 0){
 
-        if (m_shooterMotorR.getEncoder().getVelocity() <= -4000 || m_autonTimer.get() > 5) {
-          setAutonStage(1);
-        }
+      switch (m_autonStage) {
+        case (0): // Stage 0: Start ramping up shooter
+          enableShooter(true);
 
-        break;
-      case (1): // Stage 1: Fire starting payload
-        enableIndexer(true);
-        enableShooter(true);
+          if (m_shooterMotorR.getEncoder().getVelocity() <= -4000 || m_autonTimer.get() > 5) {
+            setAutonStage(1);
+          }
 
-        if (m_autonTimer.get() > 3) {
-          setAutonStage(2);
-        }
+          break;
+        case (1): // Stage 1: Fire starting payload
+          enableIndexer(true);
+          enableShooter(true);
 
-        break;
-      case (2): // Stage 2: Stop shooter and turn to face trench run
-        enableIndexer(false);
-        enableShooter(false);
+          if (m_autonTimer.get() > 3) {
+            setAutonStage(2);
+          }
 
-        if (turnTo(130, 2)) {
-          setAutonStage(3);
-        }
+          break;
+        case (2): // Stage 2: Stop shooter and turn to face trench run
+          enableIndexer(false);
+          enableShooter(false);
 
-        break;
-      case (3): // Stage 3: Move to trench run
-        if (moveTo(100, 3)) {
-          setAutonStage(4);
-        }
+          if (turnTo(130, 2)) {
+            setAutonStage(3);
+          }
 
-        break;
-      case (4): // Stage 4: Align to trench run
-        if (turnTo(50, 2)) {
-          setAutonStage(5);
-        }
+          break;
+        case (3): // Stage 3: Move to trench run
+          if (moveTo(100, 3)) {
+            setAutonStage(4);
+          }
 
-        break;
-      case (5): // Stage 5: Drop intake
-        stopAll();
-        setIntakeArm(Value.kForward);
+          break;
+        case (4): // Stage 4: Align to trench run
+          if (turnTo(50, 2)) {
+            setAutonStage(5);
+          }
 
-        if (m_autonTimer.get() >= 2) {
-          setAutonStage(6);
-        }
+          break;
+        case (5): // Stage 5: Drop intake
+          stopAll();
+          setIntakeArm(Value.kForward);
 
-        break;
-      case (6): // Stage 6: Start intake and move forward, collecting powercells
-        setIntake(MotorSpeed.FORWARD);
+          if (m_autonTimer.get() >= 2) {
+            setAutonStage(6);
+          }
 
-        if (moveTo(123, 4)) {
-          setAutonStage(7);
-        }
+          break;
+        case (6): // Stage 6: Start intake and move forward, collecting powercells
+          setIntake(MotorSpeed.FORWARD);
 
-        break;
-      case (7): // Stage 7: Stop intake and move back to start of trench run
-        setIntake(MotorSpeed.FORWARD);
+          if (moveTo(123, 4)) {
+            setAutonStage(7);
+          }
 
-        if (moveTo(-123, 4)) {
-          setAutonStage(8);
-        }
+          break;
+        case (7): // Stage 7: Stop intake and move back to start of trench run
+          setIntake(MotorSpeed.FORWARD);
 
-        break;
-      default: // Default to stop all motors and stop timer
-        stopAll();
-        m_autonTimer.stop();
-        m_autonTimer.reset();
-        break;
+          if (moveTo(-123, 4)) {
+            setAutonStage(8);
+          }
+
+          break;
+        default: // Default to stop all motors and stop timer
+          stopAll();
+          m_autonTimer.stop();
+          m_autonTimer.reset();
+          break;
+      }
     }
   }
 
   @Override
   public void teleopInit() {
   }
+
+  /* Control Scheme
+   *
+   * Drive: joystick Y  for forward-backward, twist for rotating
+   * Turbo: joystick triggerd
+   * Align to vision target: joystick fire 2
+   * Toggle limelight driver cam: joystick fire 3
+   * 
+   * Intake deploy toggle: gamepad right bumper
+   * Drive Intake + Hopper: Gamepad left trigger
+   * Drive Intake Inverted: gamepad left bumper
+   * Drive Esophagus: gamepad Y
+   * Drive climber lift up: gamepad direction up
+   * Drive climber lift down: gamepad direction down
+   * Drive climber up: gamepad direction right
+   *   
+  */
 
   @Override
   public void teleopPeriodic() {
@@ -318,7 +349,6 @@ public class Robot extends TimedRobot {
       } else {
         setClimberLift(0);
       }
-
     }
 
     // Main Drive
