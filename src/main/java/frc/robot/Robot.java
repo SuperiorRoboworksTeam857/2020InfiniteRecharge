@@ -83,19 +83,19 @@ public class Robot extends TimedRobot {
   private final double kTargetHeight = 98.25;
 
   // Robot Dimensions
-  private final double kLimelightHeight = -1.0; // TODO: Update when limelight mounted
-  private final double kLimelightAngle = -1.0; // TODO: Update when limelight mounted
+  private final double kLimelightHeight = 41.0; // TODO: Update when limelight mounted
+  private final double kLimelightAngle = -89.0; // TODO: Update when limelight mounted
 
   // Motor Output Speeds/Limits
-  private final double kDriveSpeedMultipliter = 0.7;
+  private final double kDriveSpeedMultipliter      = 1.0;
   private final double kDriveSpeedMultipliterTurbo = 1.0;
-  private final double kMaxDriveOutput = 1.0;
-  private final double kShooterSpeed = -0.95; // at one tick out speed 0.685l
-  private final double kIndexSpeed = -0.9;
-  private final double kHopperSpeed = -0.3;
-  private final double kIntakeSpeed = 1.0;
+  private final double kMaxDriveOutput   = 1.0;
+  private final double kShooterSpeed     = -0.95; // at one tick out speed 0.685l // < Not sure what that meant but I'm keeping it there in case it's important - JD
+  private final double kIndexSpeed       = -0.9;
+  private final double kHopperSpeed      = -0.3;
+  private final double kIntakeSpeed      = 1.0;
   private final double kClimberLiftSpeed = 0.7;
-  private final double kClimberSpeed = 1.0;
+  private final double kClimberSpeed     = 1.0;
 
   private static enum MotorSpeed {
     FORWARD, STOPPED, REVERSE;
@@ -108,15 +108,13 @@ public class Robot extends TimedRobot {
     m_driveFL.setInverted(true);
     m_driveRL.setInverted(true);
 
-    // Set rear drive motors to follow front drive motors
-    m_driveRL.follow(m_driveFL);
-    m_driveRR.follow(m_driveFR);
-
     // Reset encoder positions
     resetEncoders();
 
     // Invert right climber motor
     m_climberMotorR.setInverted(true);
+
+    setDriveNeutralMode(NeutralMode.Coast);
 
     // Reset gyro
     m_gyro.calibrate();
@@ -135,7 +133,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("L shooter speed", m_shooterMotorL.getEncoder().getVelocity());
     SmartDashboard.putNumber("R shooter speed", m_shooterMotorR.getEncoder().getVelocity());
 
-    // TESTING - Put limelight values on SmartDashboard
+    // TESTING - Put values on SmartDashboard
     SmartDashboard.putNumber("limelight TX", getLimelightValue("tx")); // Difference of X axis angles between crosshairs
     SmartDashboard.putNumber("limelight TY", getLimelightValue("ty")); // Difference of Y axis angles between crosshairs
     SmartDashboard.putNumber("limelight TA", getLimelightValue("ta")); // Area of target
@@ -144,6 +142,11 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("limelight led", getLimelightValue("ledMode")); // LED Mode [0 = DEFAULT | 1 = FORCE OFF |
                                                                              // 2 = FORCE BLINK | 3 = FORCE ON]
     SmartDashboard.putNumber("target distance", getLimelightValue("tDistance")); // Distance from target
+
+    SmartDashboard.putNumber("FL", m_driveFL.get());
+    SmartDashboard.putNumber("FR", m_driveFR.get());
+    SmartDashboard.putNumber("RL", m_driveRL.get());
+    SmartDashboard.putNumber("RR", m_driveRR.get());
   }
 
   @Override
@@ -183,78 +186,112 @@ public class Robot extends TimedRobot {
     if (m_autonMode == 0) {
 
       switch (m_autonStage) {
-      case (0): // Stage 0: Start ramping up shooter
-        enableShooter(true);
-
-        if (m_shooterMotorR.getEncoder().getVelocity() <= -4000 || m_autonTimer.get() > 5) {
-          setAutonStage(1);
-        }
-
-        break;
-      case (1): // Stage 1: Fire starting payload
-        enableShooter(true);
-
-        //if (turnToTarget()) {
+        case (0): // Stage 0: Start ramping up shooter
+          enableShooter(true);
+  
+          if (m_shooterMotorR.getEncoder().getVelocity() <= -4000 || m_autonTimer.get() > 5) {
+            setAutonStage(1);
+          }
+  
+          break;
+        case (1): // Stage 1: Fire starting payload
+          enableShooter(true);
           enableIndexer(true);
-        //}
-
-        if (m_autonTimer.get() > 3.2) {
-          setAutonStage(2);
+  
+          if (m_autonTimer.get() > 3.2) {
+            setAutonStage(2);
+          }
+  
+          break;
+        case (2): // Stage 2: Back up
+          enableIndexer(false);
+          enableShooter(false);
+  
+          if (moveTo(-36, 4)) {
+            setAutonStage(3);
+          }
+  
+          break;
+        default: // Default to stop all motors and stop timer
+          stopAll();
+          m_autonTimer.stop();
+          m_autonTimer.reset();
+          break;
         }
 
-        break;
-      case (2): // Stage 2: Stop shooter and turn to face trench run
-        enableIndexer(false);
-        enableShooter(false);
+      // switch (m_autonStage) {
+      // case (0): // Stage 0: Start ramping up shooter
+      //   enableShooter(true);
 
-        if (turnTo(130, 2)) {
-          setAutonStage(3);
-        }
+      //   if (m_shooterMotorR.getEncoder().getVelocity() <= -4000 || m_autonTimer.get() > 5) {
+      //     setAutonStage(1);
+      //   }
 
-        break;
-      case (3): // Stage 3: Move to trench run
-        if (moveTo(100, 3)) {
-          setAutonStage(4);
-        }
+      //   break;
+      // case (1): // Stage 1: Fire starting payload
+      //   enableShooter(true);
 
-        break;
-      case (4): // Stage 4: Align to trench run
-        if (turnTo(45, 2)) {
-          setAutonStage(5);
-        }
+      //   //if (turnToTarget()) {
+      //     enableIndexer(true);
+      //   //}
 
-        break;
-      case (5): // Stage 5: Drop intake
-        stopAll();
-        setIntakeArm(Value.kForward);
+      //   if (m_autonTimer.get() > 3.2) {
+      //     setAutonStage(2);
+      //   }
 
-        if (m_autonTimer.get() >= 2) {
-          setAutonStage(6);
-        }
+      //   break;
+      // case (2): // Stage 2: Stop shooter and turn to face trench run
+      //   enableIndexer(false);
+      //   enableShooter(false);
 
-        break;
-      case (6): // Stage 6: Start intake and move forward, collecting powercells
-        setIntake(MotorSpeed.FORWARD);
+      //   if (turnTo(130, 2)) {
+      //     setAutonStage(3);
+      //   }
 
-        if (moveTo(123, 4)) {
-          setAutonStage(7);
-        }
+      //   break;
+      // case (3): // Stage 3: Move to trench run
+      //   if (moveTo(100, 3)) {
+      //     setAutonStage(4);
+      //   }
 
-        break;
-      case (7): // Stage 7: Stop intake and move back to start of trench run
-        setIntake(MotorSpeed.FORWARD);
+      //   break;
+      // case (4): // Stage 4: Align to trench run
+      //   if (turnTo(45, 2)) {
+      //     setAutonStage(5);
+      //   }
 
-        if (moveTo(-123, 4)) {
-          setAutonStage(8);
-        }
+      //   break;
+      // case (5): // Stage 5: Drop intake
+      //   stopAll();
+      //   setIntakeArm(Value.kForward);
 
-        break;
-      default: // Default to stop all motors and stop timer
-        stopAll();
-        m_autonTimer.stop();
-        m_autonTimer.reset();
-        break;
-      }
+      //   if (m_autonTimer.get() >= 2) {
+      //     setAutonStage(6);
+      //   }
+
+      //   break;
+      // case (6): // Stage 6: Start intake and move forward, collecting powercells
+      //   setIntake(MotorSpeed.FORWARD);
+
+      //   if (moveTo(123, 4)) {
+      //     setAutonStage(7);
+      //   }
+
+      //   break;
+      // case (7): // Stage 7: Stop intake and move back to start of trench run
+      //   setIntake(MotorSpeed.FORWARD);
+
+      //   if (moveTo(-123, 4)) {
+      //     setAutonStage(8);
+      //   }
+
+      //   break;
+      // default: // Default to stop all motors and stop timer
+      //   stopAll();
+      //   m_autonTimer.stop();
+      //   m_autonTimer.reset();
+      //   break;
+      // }
     }
   }
 
@@ -282,19 +319,6 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-
-    // Speed Init
-    double speedL = 0.0;
-    double speedR = 0.0;
-
-    // Controls : Joystick forward-backward + twist
-    // Add joystick forward-backward
-    speedL += m_joystick.getRawAxis(IDs.JoystickIDs.Y_AXIS);
-    speedR += m_joystick.getRawAxis(IDs.JoystickIDs.Y_AXIS);
-
-    // Add joystick twist
-    speedL -= m_joystick.getRawAxis(IDs.JoystickIDs.TWIST_AXIS);
-    speedR += m_joystick.getRawAxis(IDs.JoystickIDs.TWIST_AXIS);
 
     // Toggle limelight driver camera on joystick fire 3 pressed
     if (m_joystick.getRawButtonPressed(IDs.JoystickIDs.FIRE_5)) {
@@ -363,7 +387,27 @@ public class Robot extends TimedRobot {
       }
     }
 
-    m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_X_AXIS);
+    // Drive climb slider with gamepad left joystick X axis
+    m_climberSliderMotor.set(m_gamepad.getRawAxis(IDs.ControllerIDs.LEFT_X_AXIS));
+
+    // Speed Init
+    double speedL = 0.0;
+    double speedR = 0.0;
+
+    // Controls : Joystick forward-backward + twist
+    // Add joystick forward-backward
+    speedL += m_joystick.getRawAxis(IDs.JoystickIDs.Y_AXIS);
+    speedR += m_joystick.getRawAxis(IDs.JoystickIDs.Y_AXIS);
+
+    // Add joystick twist
+    speedL -= m_joystick.getRawAxis(IDs.JoystickIDs.THROTTLE_AXIS);
+    speedR += m_joystick.getRawAxis(IDs.JoystickIDs.THROTTLE_AXIS);
+
+    // TESTING - Put everything on the SmartDashboard to figure out what the h e c k is going wrong
+    SmartDashboard.putNumber("joystick Y", m_joystick.getRawAxis(IDs.JoystickIDs.Y_AXIS));
+    SmartDashboard.putNumber("joystick twist", m_joystick.getRawAxis(IDs.JoystickIDs.THROTTLE_AXIS));
+    SmartDashboard.putNumber("speedL", speedL);
+    SmartDashboard.putNumber("speedL", speedR);
 
     // Main Drive
     // Aim to vision target on joystick fire 2 pressed, else drive standard
@@ -387,13 +431,12 @@ public class Robot extends TimedRobot {
       } else {
         setDrive(speedL * kDriveSpeedMultipliter, speedR * kDriveSpeedMultipliter);
       }
-
     }
   }
 
   @Override
   public void disabledInit() {
-    enableLimelight(true);
+    enableLimelight(false);
   }
 
   private void setAutonStage(int stage) {
@@ -518,6 +561,8 @@ public class Robot extends TimedRobot {
   private void setDrive(double speedL, double speedR) {
     m_driveFL.set(limitSpeed(speedL));
     m_driveFR.set(limitSpeed(speedR));
+    m_driveRL.set(limitSpeed(speedL));
+    m_driveRR.set(limitSpeed(speedR));
   }
 
   private void enableShooter(boolean enabled) {
