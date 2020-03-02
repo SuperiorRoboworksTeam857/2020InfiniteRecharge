@@ -86,9 +86,6 @@ public class FrancoisXXI extends TimedRobot {
     public final double kLimelightAngle = -89.0; // TODO: Update when limelight mounted
 
     // Motor Output Speeds/Limits
-    public final double kDriveSpeedMultipliter = 1.0;
-    public final double kDriveSpeedMultipliterTurbo = 1.0;
-    public final double kMaxDriveOutput = 1.0;
     public final double kShooterSpeed = -0.95; // at one tick out speed 0.685l // < Not sure what that meant but I'm keeping it there in case it's important - JD
     public final double kIndexSpeed = -0.9;
     public final double kHopperSpeed = -0.3;
@@ -420,19 +417,15 @@ public class FrancoisXXI extends TimedRobot {
 
             // Turn to target and allow distance adjustments from joystick when aligned
             if (turnToTarget()) {
-                setDrive(m_joystick.getRawAxis(IDs.Controls.kDriveFwdAxis) * kDriveSpeedMultipliter);
+                setDrive(m_joystick.getRawAxis(IDs.Controls.kDriveFwdAxis));
             }
 
         } else {
             // Turn off limelight
             enableLimelight(false);
-
-            // Drive with turbo speed on joystick trigger button pressed, else drive normal speed
-            if (m_joystick.getRawButton(IDs.Controls.kTurboButton)) {
-                setDrive(speedL * kDriveSpeedMultipliterTurbo, speedR * kDriveSpeedMultipliterTurbo);
-            } else {
-                setDrive(speedL * kDriveSpeedMultipliter, speedR * kDriveSpeedMultipliter);
-            }
+            
+            // Drive
+            setDrive(speedL, speedR);
         }
     }
 
@@ -568,10 +561,10 @@ public class FrancoisXXI extends TimedRobot {
     }
 
     public void setDrive(double speedL, double speedR) {
-        m_driveFL.set(limitSpeed(speedL));
-        m_driveFR.set(limitSpeed(speedR));
-        m_driveRL.set(limitSpeed(speedL));
-        m_driveRR.set(limitSpeed(speedR));
+        m_driveFL.set(speedL);
+        m_driveFR.set(speedR);
+        m_driveRL.set(speedL);
+        m_driveRR.set(speedR);
     }
 
     public void enableShooter(boolean enabled) {
@@ -692,11 +685,11 @@ public class FrancoisXXI extends TimedRobot {
         m_driveRR.setNeutralMode(mode);
     }
 
-    public double limitSpeed(double d) {
-        if (d > kMaxDriveOutput) {
-            d = kMaxDriveOutput;
-        } else if (d < -kMaxDriveOutput) {
-            d = -kMaxDriveOutput;
+    public double limitSpeed(double d, double limit) {
+        if (d > limit) {
+            d = limit;
+        } else if (d < -limit) {
+            d = -limit;
         }
         return d;
     }
