@@ -1,5 +1,5 @@
 /**
- * @author programming@first857.org
+ * @author programming@first857.org | first@jacobdixon.us (Jacob Dixon)
  * @version 1.0a
  * @since 2020-01-17
  * 
@@ -10,7 +10,9 @@
 
 package frc.robot;
 
-public interface IDs extends JoystickIDs {
+import org.first857.utils.Controllers;
+
+public interface IDs extends Controllers {
 
     public class Controls {
         // Controls
@@ -18,37 +20,37 @@ public interface IDs extends JoystickIDs {
         // - Driver (Saitek ST290 Pro Joystick)
 
         // - - Drive
-        public static final int kDriveFwdAxis                 = SaitekST290.Y_AXIS;
-        public static final int kDriveRotationAxis            = SaitekST290.TWIST_AXIS;
-        public static final int kTurboButton                  = SaitekST290.FIRE_4_BUTTON;
+        public static final int kDriveForwardAxis                = SaitekST290.Y_AXIS_ID;
+        public static final int kDriveRotateAxis                 = SaitekST290.TWIST_AXIS_ID;
+        public static final int kTurboButton                     = SaitekST290.FIRE_4_BUTTON_ID;
 
         // - - Systems
 
         // - - - Intake
-        public static final int kRunIntakeNormalButton         = SaitekST290.TRIGGER_BUTTON;
-        public static final int kRunIntakeReverseButton        = SaitekST290.FIRE_2_BUTTON;
-        public static final int kToggleIntakePositionButton    = SaitekST290.FIRE_6_BUTTON;
+        public static final int kRunIntakeNormalButton         = SaitekST290.TRIGGER_BUTTON_ID;
+        public static final int kRunIntakeReverseButton        = SaitekST290.FIRE_2_BUTTON_ID;
+        public static final int kToggleIntakePositionButton    = SaitekST290.FIRE_6_BUTTON_ID;
 
         // - - - Limelight 
-        public static final int kToggleCamButton               = SaitekST290.FIRE_3_BUTTON;
-        public static final int kAlignToTargetButton           = SaitekST290.FIRE_5_BUTTON;
+        public static final int kToggleCamButton               = SaitekST290.FIRE_3_BUTTON_ID;
+        public static final int kAlignToTargetButton           = SaitekST290.FIRE_5_BUTTON_ID;
 
         // - - - Hopper
-        public static final int kRunHopperPOV                  = SaitekST290.S_POV;
+        public static final int kRunHopperPOV                  = SaitekST290.S_POV_ID;
 
         // Operator (Logitech F310)
 
         // - Shooter
-        public static final int kDriveShooterAxis              = LogitechF310.RIGHT_TRIGGER_AXIS;
+        public static final int kDriveShooterAxis              = LogitechF310.RIGHT_TRIGGER_AXIS_ID;
 
         // - Climber
-        public static final int kRunClimbLiftUpPOV             = LogitechF310.N_POV;
-        public static final int kRunClimbLiftDownPOV           = LogitechF310.S_POV;
-        public static final int kRunClimbPOV                   = LogitechF310.E_POV;
-        public static final int kDriveClimbSlideAxis           = LogitechF310.RIGHT_X_AXIS;
+        public static final int kRunClimbLiftUpPOV             = LogitechF310.N_POV_ID;
+        public static final int kRunClimbLiftDownPOV           = LogitechF310.S_POV_ID;
+        public static final int kRunClimbPOV                   = LogitechF310.E_POV_ID;
+        public static final int kDriveClimbSlideAxis           = LogitechF310.RIGHT_X_AXIS_ID;
 
         // - Esophagus
-        public static final int kRunEsophagusButton            = LogitechF310.Y_BUTTON;
+        public static final int kRunEsophagusButton            = LogitechF310.Y_BUTTON_ID;
     }
 
     public class DriveStation {

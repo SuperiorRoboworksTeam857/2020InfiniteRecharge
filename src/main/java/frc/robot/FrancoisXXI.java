@@ -1,3 +1,8 @@
+/**
+ * @author programming@first857.org | first@jacobdixon.us (Jacob Dixon)
+ * @version 1.0a
+ * @since 2020-01-17
+ */
 
 /*----------------------------------------------------------------------------*/
 /* Copyright (c) 2017-2018 FIRST. All Rights Reserved.                        */
@@ -13,16 +18,25 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
-import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.IDs;
 import frc.robot.IDs.Controls;
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.networktables.NetworkTableInstance;
 
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+
+import org.first857.utils.Maths;
+import org.first857.utils.Controllers.LogitechF310;
+import org.first857.utils.Controllers.SaitekST290;
+import org.first857.utils.Controllers.SwitchBoard;
+
 import com.revrobotics.CANSparkMax;
 
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
@@ -32,68 +46,75 @@ import edu.wpi.first.wpilibj.DoubleSolenoid;
 public class FrancoisXXI extends TimedRobot {
 
     // Driver Input
-    public Joystick m_joystick = new Joystick(IDs.DriveStation.kJoystick);
-    public Joystick m_gamepad = new Joystick(IDs.DriveStation.kGamepad);
+    public static SaitekST290 m_joystick = new SaitekST290(IDs.DriveStation.kJoystick);
+    public static LogitechF310 m_gamepad = new LogitechF310(IDs.DriveStation.kGamepad);
+    public static SwitchBoard m_autonSelector = new SwitchBoard(IDs.DriveStation.kSwitchboard);
 
     // Drive Motors
-    public WPI_TalonFX m_driveFL = new WPI_TalonFX(IDs.CAN.kFrontLeftChannel);
-    public WPI_TalonFX m_driveRL = new WPI_TalonFX(IDs.CAN.kRearLeftChannel);
-    public WPI_TalonFX m_driveFR = new WPI_TalonFX(IDs.CAN.kFrontRightChannel);
-    public WPI_TalonFX m_driveRR = new WPI_TalonFX(IDs.CAN.kRearRightChannel);
+    public static WPI_TalonFX m_driveFL = new WPI_TalonFX(IDs.CAN.kFrontLeftChannel);
+    public static WPI_TalonFX m_driveRL = new WPI_TalonFX(IDs.CAN.kRearLeftChannel);
+    public static WPI_TalonFX m_driveFR = new WPI_TalonFX(IDs.CAN.kFrontRightChannel);
+    public static WPI_TalonFX m_driveRR = new WPI_TalonFX(IDs.CAN.kRearRightChannel);
+
+    // Drive Groups
+    public static SpeedControllerGroup m_driveL = new SpeedControllerGroup(m_driveFL, m_driveRL);
+    public static SpeedControllerGroup m_driveR = new SpeedControllerGroup(m_driveFR, m_driveRR);
+
+    // Drive
+    public static DifferentialDrive m_drive = new DifferentialDrive(m_driveL, m_driveR);
 
     // Game Piece Manipulation
-    public WPI_VictorSPX m_intakeMotor = new WPI_VictorSPX(IDs.CAN.kIntake);
-    public WPI_VictorSPX m_indexMotor = new WPI_VictorSPX(IDs.CAN.kIndexer);
-    public WPI_VictorSPX m_hopperMotor = new WPI_VictorSPX(IDs.CAN.kHopper);
+    public static WPI_VictorSPX m_intakeMotor = new WPI_VictorSPX(IDs.CAN.kIntake);
+    public static WPI_VictorSPX m_indexMotor = new WPI_VictorSPX(IDs.CAN.kIndexer);
+    public static WPI_VictorSPX m_hopperMotor = new WPI_VictorSPX(IDs.CAN.kHopper);
 
     // - Shooter
-    public CANSparkMax m_shooterMotorL = new CANSparkMax(IDs.CAN.kShooterL, MotorType.kBrushless);
-    public CANSparkMax m_shooterMotorR = new CANSparkMax(IDs.CAN.kShooterR, MotorType.kBrushless);
+    public static CANSparkMax m_shooterMotorL = new CANSparkMax(IDs.CAN.kShooterL, MotorType.kBrushless);
+    public static CANSparkMax m_shooterMotorR = new CANSparkMax(IDs.CAN.kShooterR, MotorType.kBrushless);
 
     // Climber
-    public WPI_TalonSRX m_climberLiftMotor = new WPI_TalonSRX(IDs.CAN.kClimbLift);
-    public WPI_TalonSRX m_climberMotorR = new WPI_TalonSRX(IDs.CAN.kClimbR);
-    public WPI_TalonSRX m_climberMotorL = new WPI_TalonSRX(IDs.CAN.kClimbL);
-    public WPI_VictorSPX m_climberSliderMotor = new WPI_VictorSPX(IDs.CAN.kClimbSlide);
+    public static WPI_TalonSRX m_climberLiftMotor = new WPI_TalonSRX(IDs.CAN.kClimbLift);
+    public static WPI_TalonSRX m_climberMotorR = new WPI_TalonSRX(IDs.CAN.kClimbR);
+    public static WPI_TalonSRX m_climberMotorL = new WPI_TalonSRX(IDs.CAN.kClimbL);
+    public static WPI_VictorSPX m_climberSliderMotor = new WPI_VictorSPX(IDs.CAN.kClimbSlide);
 
     // Sensors
-    public ADXRS450_Gyro m_gyro = new ADXRS450_Gyro();
+    public static ADXRS450_Gyro m_gyro = new ADXRS450_Gyro();
 
     // - Internal Game Piece Sensors
     // TODO : Hopefully use these at some point?
-    public DigitalInput m_indexSensor0 = new DigitalInput(0);
-    public DigitalInput m_indexSensor1 = new DigitalInput(1);
-    public DigitalInput m_indexSensor2 = new DigitalInput(2);
+    public static DigitalInput m_indexSensor0 = new DigitalInput(0);
+    public static DigitalInput m_indexSensor1 = new DigitalInput(1);
+    public static DigitalInput m_indexSensor2 = new DigitalInput(2);
 
     // Pneumatics
-    public DoubleSolenoid m_intakeSolenoid = new DoubleSolenoid(IDs.CAN.kPneumatics, 0, 1);
+    public static DoubleSolenoid m_intakeSolenoid = new DoubleSolenoid(IDs.CAN.kPneumatics, 0, 1);
 
     // LED Controller
-    public Spark m_ledController = new Spark(0);
+    public static Spark m_ledController = new Spark(0);
 
     // Autonomous
-    public Joystick m_autonSelector = new Joystick(IDs.DriveStation.kSwitchboard);
-    public Timer m_autonTimer = new Timer();
-    public int m_autonMode = 0;
-    public int m_autonStage = 0;
-    public final double kEncoderTicksPerInch = (2048 * 10.71) / (Math.PI * 6);
+    public static Timer m_autonTimer = new Timer();
+    public static int m_autonMode = 0;
+    public static int m_autonStage = 0;
+    public static final double kEncoderTicksPerInch = (2048 * 10.71) / (Math.PI * 6);
 
     // Field Element Dimensions
-    public final double kTargetHeight = 98.25;
+    public static final double kTargetHeight = 98.25;
 
     // Robot Dimensions
-    public final double kLimelightHeight = 41.0; // TODO: Update when limelight mounted
-    public final double kLimelightAngle = -89.0; // TODO: Update when limelight mounted
+    public static final double kLimelightHeight = 41.0; // TODO: Update when limelight mounted
+    public static final double kLimelightAngle = -89.0; // TODO: Update when limelight mounted
 
     // Motor Output Speeds/Limits
-    public final double kShooterSpeed = -0.95; // at one tick out speed 0.685l // < Not sure what that meant but I'm keeping it there in case it's important - JD
-    public final double kIndexSpeed = -0.9;
-    public final double kHopperSpeed = -0.3;
-    public final double kIntakeSpeed = 1.0;
-    public final double kClimberLiftSpeed = 0.7;
-    public final double kClimberSpeed = 1.0;
+    public static final double kShooterSpeed = -0.95; // at one tick out speed 0.685l // < Not sure what that meant but I'm keeping it there in case it's important - JD
+    public static final double kIndexSpeed = -0.9;
+    public static final double kHopperSpeed = -0.3;
+    public static final double kIntakeSpeed = 1.0;
+    public static final double kClimberLiftSpeed = 0.7;
+    public static final double kClimberSpeed = 1.0;
 
-    public enum MotorSpeed {
+    public static enum MotorSpeed {
         FORWARD, STOPPED, REVERSE;
     }
 
@@ -103,6 +124,9 @@ public class FrancoisXXI extends TimedRobot {
         // Invert left drive motors
         m_driveFL.setInverted(true);
         m_driveRL.setInverted(true);
+
+        // Start automatic camera capture
+        CameraServer.getInstance().startAutomaticCapture();
 
         // Reset encoder positions
         resetEncoders();
@@ -116,6 +140,9 @@ public class FrancoisXXI extends TimedRobot {
         // Calibrate and reset gyro
         m_gyro.calibrate();
         m_gyro.reset();
+
+        // Turn off limelight
+        enableLimelight(false);
     }
 
     @Override
@@ -181,8 +208,8 @@ public class FrancoisXXI extends TimedRobot {
     @Override
     public void autonomousPeriodic() {
 
-        // Mode 0: Fire starting payload and back off starting line
-        if (m_autonMode == 0) {
+        if (m_autonMode == 0) { // Mode 0: Fire starting payload and back off starting line
+
             switch (m_autonStage) {
                 case (0): // Stage 0: Start ramping up shooter
                     enableShooter(true);
@@ -217,7 +244,8 @@ public class FrancoisXXI extends TimedRobot {
                     break;
             }
 
-        } else if (m_autonMode == 1) {
+        } else if (m_autonMode == 1) { // Mode 1: Fire starting payload then relaod at trench
+            
             // TODO : Make sure this still works I guess?
             switch (m_autonStage) {
                 case (0): // Stage 0: Start ramping up shooter
@@ -296,42 +324,31 @@ public class FrancoisXXI extends TimedRobot {
     public void teleopInit() {
     }
 
-    // TODO : Update control scheme to account for joystick twist sensitivity when not driving forward/backward
-    // TODO : Add speed adjustment control?
-
-    /* 
-     * Control Scheme:
-     * 
-     * Drive: joystick Y forward/backward, twist for rotation
-     * Toggle intake arm: joystick fire 6
-     * 
-     */
-
     @Override
     public void teleopPeriodic() {
 
-        // Toggle limelight driver camera on joystick fire 5 pressed
+        // Toggle limelight driver camera on button press
         if (m_joystick.getRawButtonPressed(IDs.Controls.kToggleCamButton)) {
             toggleDriverCam();
         }
 
-        // Run shooter on gamepad right trigger pulled
+        // Run shooter on trigger
         if (m_gamepad.getRawAxis(IDs.Controls.kDriveShooterAxis) > 0.2) {
             enableShooter(true);
         } else {
             enableShooter(false);
         }
 
-        // Run intake/hopper in on joystick trigger pressed and out on joystick fire 2 pressed (prevent if intake arm is not extended)
-        if (m_joystick.getRawButton(IDs.Controls.kRunIntakeNormalButton) && m_intakeSolenoid.get().equals(Value.kForward)) {
+        // Run intake in on button press and out on button press (prevent if intake arm is not extended)
+        if (m_joystick.getRawButton(IDs.Controls.kRunIntakeNormalButton) ) {
             setIntake(MotorSpeed.FORWARD);
-        } else if (m_joystick.getRawButton(IDs.Controls.kRunIntakeReverseButton) && m_intakeSolenoid.get().equals(Value.kForward)) {
+        } else if (m_joystick.getRawButton(IDs.Controls.kRunIntakeReverseButton)) {
             setIntake(MotorSpeed.REVERSE);
         } else {
             setIntake(MotorSpeed.STOPPED);
         }
 
-        // Toggle intake arm position on joystick fire 6 pressed
+        // Toggle intake arm position on button press
         if (m_joystick.getRawButtonPressed(IDs.Controls.kToggleIntakePositionButton)) {
             if (!m_intakeSolenoid.get().equals(Value.kForward)) {
                 setIntakeArm(Value.kForward);
@@ -340,14 +357,14 @@ public class FrancoisXXI extends TimedRobot {
             }
         }
 
-        // Enable esophagus on gamepad Y button pressed
+        // Run esophagus on button press
         if (m_gamepad.getRawButton(IDs.Controls.kRunEsophagusButton)) {
             enableIndexer(true);
         } else {
             enableIndexer(false);
         }
 
-        // Run hopper if intake or esophagus is running otherwise always run on joystick HAT direction up else stop
+        // Run hopper if intake or esophagus is running otherwise always run on button press
         if (((m_joystick.getRawButton(IDs.Controls.kRunIntakeNormalButton) ||
              m_gamepad.getRawButton(IDs.Controls.kRunEsophagusButton)) &&
              m_intakeSolenoid.get().equals(Value.kForward)) || 
@@ -357,7 +374,7 @@ public class FrancoisXXI extends TimedRobot {
             enableHopper(false);
         }
 
-        // Drive climber on gamepad directional right pressed, else stop climber and check for climb lift
+        // Drive climber on button press
         if (m_gamepad.getPOV() == Controls.kRunClimbPOV) {
 
             // Stop climber lift and set to coast
@@ -375,7 +392,7 @@ public class FrancoisXXI extends TimedRobot {
             // Set climb lift to brake 
             m_climberLiftMotor.setNeutralMode(NeutralMode.Brake);
 
-            // Drive climber lift up on gamepad directional up pressed, down on gamepad directional down pressed
+            // Drive climber lift up on button press and down on button press
             if (m_gamepad.getPOV() == IDs.Controls.kRunClimbLiftUpPOV) {
                 setClimberLift(kClimberLiftSpeed);
 
@@ -387,45 +404,32 @@ public class FrancoisXXI extends TimedRobot {
             }
         }
 
-        // Drive climb slider with gamepad left joystick X axis
-        setClimberSlideMotor(m_gamepad.getRawAxis(IDs.Controls.kDriveClimbSlideAxis));
-
-        // Speed Init
-        double speedL = 0.0;
-        double speedR = 0.0;
-
-        // Add joystick forward-backward to speed values
-        speedL += m_joystick.getRawAxis(IDs.Controls.kDriveFwdAxis);
-        speedR += m_joystick.getRawAxis(IDs.Controls.kDriveFwdAxis);
-
-        // Add joystick twist to speed values
-        speedL -= m_joystick.getRawAxis(IDs.Controls.kDriveRotationAxis);
-        speedR += m_joystick.getRawAxis(IDs.Controls.kDriveRotationAxis);
-
-        // TESTING - Put everything on the SmartDashboard to figure out what the h e c k is going wrong
-        SmartDashboard.putNumber("joystick forward", m_joystick.getRawAxis(IDs.Controls.kDriveFwdAxis));
-        SmartDashboard.putNumber("joystick twist", m_joystick.getRawAxis(IDs.Controls.kDriveRotationAxis));
-        SmartDashboard.putNumber("speedL", speedL);
-        SmartDashboard.putNumber("speedL", speedR);
+        // Drive climb slider on trigger
+        if(Math.abs(m_gamepad.getRawAxis(IDs.Controls.kDriveClimbSlideAxis)) > 0.08){
+            setClimberSlideMotor(m_gamepad.getRawAxis(IDs.Controls.kDriveClimbSlideAxis));
+        }
 
         // Main Drive
+        double speedForward  = m_joystick.getRawAxis(IDs.Controls.kDriveForwardAxis);
+        double speedRotation = m_joystick.getRawAxis(IDs.Controls.kDriveRotateAxis);
 
-        // Aim to vision target on joystick fire 2 pressed, else drive standard
+        speedForward = Maths.deadband(speedForward, 0.08);
+        speedRotation = Maths.deadband(speedRotation, 0.08);
+
+        // Aim to vision target on button press
         if (m_joystick.getRawButton(IDs.Controls.kAlignToTargetButton)) {
             // Turn on limelight
             enableLimelight(true);
 
             // Turn to target and allow distance adjustments from joystick when aligned
-            if (turnToTarget()) {
-                setDrive(m_joystick.getRawAxis(IDs.Controls.kDriveFwdAxis));
-            }
+            if (turnToTarget()) setDrive(m_joystick.getRawAxis(IDs.Controls.kDriveForwardAxis));
 
         } else {
             // Turn off limelight
             enableLimelight(false);
-            
-            // Drive
-            setDrive(speedL, speedR);
+
+            // Hopefully drive maybe?
+            m_drive.arcadeDrive(speedForward, speedRotation);
         }
     }
 
@@ -544,7 +548,7 @@ public class FrancoisXXI extends TimedRobot {
         }
 
         if (Math.abs(tx) > 4.0) {
-            setDriveRotate(-(tx / 26) * 0.6);
+            setDriveRotate(-(tx / 26) * 0.4);
         } else {
             complete = true;
         }
@@ -646,12 +650,12 @@ public class FrancoisXXI extends TimedRobot {
 
     public double getLimelightValue(String entry) {
 
-        double value = -1.0;
+        double value = 0.0;
 
         if (entry.equals("tDistance")) {
             value = (kTargetHeight - kLimelightHeight) / Math.tan(Math.toRadians(kLimelightAngle + getLimelightValue("ty")));
         } else {
-            value = NetworkTableInstance.getDefault().getTable("limelight").getEntry(entry).getDouble(-1.0);
+            value = NetworkTableInstance.getDefault().getTable("limelight").getEntry(entry).getDouble(0.0);
         }
 
         return value;
@@ -683,15 +687,6 @@ public class FrancoisXXI extends TimedRobot {
         m_driveFR.setNeutralMode(mode);
         m_driveRL.setNeutralMode(mode);
         m_driveRR.setNeutralMode(mode);
-    }
-
-    public double limitSpeed(double d, double limit) {
-        if (d > limit) {
-            d = limit;
-        } else if (d < -limit) {
-            d = -limit;
-        }
-        return d;
     }
 
 }
