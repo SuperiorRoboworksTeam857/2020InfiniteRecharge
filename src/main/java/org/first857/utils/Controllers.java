@@ -137,8 +137,8 @@ public abstract interface Controllers {
 
         public static final int LEFT_BUMPER_BUTTON_ID  = 5; 
         public static final int RIGHT_BUMPER_BUTTON_ID = 6; 
-        public static final int SHARE_BUTTON_ID         = 7; 
-        public static final int MENU_BUTTON_ID        = 8; 
+        public static final int SHARE_BUTTON_ID        = 7; 
+        public static final int MENU_BUTTON_ID         = 8; 
 
         public static final int LEFT_STICK_BUTTON_ID  = 9; 
         public static final int RIGHT_STICK_BUTTON_ID = 10; 
@@ -216,9 +216,9 @@ public abstract interface Controllers {
         
     }
 
-    public class SwitchBoard extends Controller {
+    public class MSP430Switchboard extends Controller {
 
-        public SwitchBoard(int port) {
+        public MSP430Switchboard(int port) {
             super(port);
         }
 

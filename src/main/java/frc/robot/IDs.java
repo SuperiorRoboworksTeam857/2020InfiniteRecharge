@@ -20,9 +20,9 @@ public interface IDs extends Controllers {
         // - Driver (Saitek ST290 Pro Joystick)
 
         // - - Drive
-        public static final int kDriveForwardAxis                = SaitekST290.Y_AXIS_ID;
-        public static final int kDriveRotateAxis                 = SaitekST290.TWIST_AXIS_ID;
-        public static final int kTurboButton                     = SaitekST290.FIRE_4_BUTTON_ID;
+        public static final int kDriveForwardAxis               = SaitekST290.Y_AXIS_ID;
+        public static final int kDriveRotateAxis                = SaitekST290.TWIST_AXIS_ID;
+        public static final int kTurboButton                    = SaitekST290.FIRE_4_BUTTON_ID;
 
         // - - Systems
 
@@ -75,7 +75,7 @@ public interface IDs extends Controllers {
         public static final int kIntake  = 34;
         public static final int kClimb   = 35;
         public static final int kHopper  = 36;
-        public static final int kIndexer = 37;
+        public static final int kEsophagus = 37;
 
         // - Climber (Victor SPX)
         public static final int kClimbL     = 25;
