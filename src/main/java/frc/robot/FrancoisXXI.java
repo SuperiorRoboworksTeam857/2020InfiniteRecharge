@@ -48,7 +48,7 @@ public class FrancoisXXI extends TimedRobot {
     // Driver Input
     public static SaitekST290 m_joystick = new SaitekST290(IDs.DriveStation.kJoystick);
     public static LogitechF310 m_gamepad = new LogitechF310(IDs.DriveStation.kGamepad);
-    public static MSP430Switchboard m_autonSelector = new MSP430Switchboard(IDs.DriveStation.kSwitchboard);
+    public static MSP430Switchboard m_switchboard = new MSP430Switchboard(IDs.DriveStation.kSwitchboard);
 
     // Drive Motors
     public static WPI_TalonFX m_driveFL = new WPI_TalonFX(IDs.CAN.kFrontLeftChannel);
@@ -145,6 +145,20 @@ public class FrancoisXXI extends TimedRobot {
 
         // Turn off limelight
         enableLimelight(false);
+
+        // Check joystick connections
+
+        if (!m_joystick.getName().toLowerCase().contains("st290")) {
+            System.err.println("WARNING: The detected type for joystick 0 is different than expected, it's possible the joystick was not plugged into the correct port. Expected: st290; Got: " + m_joystick.getName());
+        }
+
+        if(!m_gamepad.getName().toLowerCase().contains("controller")){
+            System.err.println("WARNING: The detected type for joystick 1 is different than expected, it's possible the joystick was not plugged into the correct port. Expected: controller; Got: " + m_gamepad.getName());
+        }
+
+        if(!m_switchboard.getName().toLowerCase().contains("msp430")){
+            System.err.println("WARNING: The detected type for joystick 2 is different than expected, it's possible the joystick was not plugged into the correct port. Expected: msp430; Got: " + m_gamepad.getName());
+        }
     }
 
     @Override
@@ -207,7 +221,7 @@ public class FrancoisXXI extends TimedRobot {
 
         // Get first switch toggled on drive station to select auton mode
         for (int i = 3; i < 8; i++) {
-            if (m_autonSelector.getRawButton(i)) {
+            if (m_switchboard.getRawButton(i)) {
                 m_autonMode = i - 3;
                 break;
             }
@@ -380,11 +394,6 @@ public class FrancoisXXI extends TimedRobot {
             enableHopper(false);
         }
 
-        if(m_joystick.getRawButton(IDs.Controls.kRunIntakeNormalButton) ||
-           m_joystick.getRawButton(IDs.Controls.kRunIntakeReverseButton)){
-
-           }
-
         // Drive climber on button press
         if (m_gamepad.getPOV() == Controls.kRunClimbPOV) {
 
@@ -526,6 +535,8 @@ public class FrancoisXXI extends TimedRobot {
         resetEncoders();
         m_autonTimer.reset();
         m_gyro.reset();
+
+        m_autonPIDerrSum = 0;
 
         if(stopAll) stopAll();
 
