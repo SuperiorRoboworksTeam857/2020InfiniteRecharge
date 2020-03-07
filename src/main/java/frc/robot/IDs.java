@@ -44,7 +44,8 @@ public interface IDs extends Controllers {
         public static final int kDriveShooterAxis              = LogitechF310.LEFT_TRIGGER_AXIS_ID;
 
         // - Esophagus
-        public static final int kRunEsophagusAxis            = LogitechF310.RIGHT_TRIGGER_AXIS_ID;
+        public static final int kRunEsophagusAxis              = LogitechF310.RIGHT_TRIGGER_AXIS_ID;
+        public static final int kRunEsophagusOverrideButton    = LogitechF310.Y_BUTTON_ID;
 
         // - Climber
         public static final int kRunClimbLiftUpPOV             = LogitechF310.N_POV_ID;
@@ -57,8 +58,8 @@ public interface IDs extends Controllers {
         // Drive Station
 
         // - USB Input Devices
-        public static final int kJoystick    = 0;
-        public static final int kGamepad     = 1;
+        public static final int kGamepad     = 0;
+        public static final int kJoystick    = 1;
         public static final int kSwitchboard = 2;
     }
 

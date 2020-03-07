@@ -32,6 +32,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import org.first857.utils.Maths;
+import org.first857.utils.Safety;
 import org.first857.utils.Controllers.LogitechF310;
 import org.first857.utils.Controllers.SaitekST290;
 import org.first857.utils.Controllers.MSP430Switchboard;
@@ -150,8 +151,7 @@ public class FrancoisXXI extends TimedRobot {
         // Turn off limelight
         enableLimelight(false);
 
-        // Check joystick connections
-
+        // Set LED mode
         setLEDs(LEDmode.RGB);
     }
 
@@ -161,20 +161,6 @@ public class FrancoisXXI extends TimedRobot {
         // TESTING - Put gyro angle on SmartDashboard
         SmartDashboard.putNumber("gyro angle", m_gyro.getAngle());
 
-        // TESTING - Put encoder values on SmartDashboard
-        SmartDashboard.putNumber("L encoder", m_driveFL.getSensorCollection().getIntegratedSensorPosition());
-        SmartDashboard.putNumber("R encoder", m_driveFR.getSensorCollection().getIntegratedSensorPosition());
-        SmartDashboard.putNumber("L shooter speed", m_shooterMotorL.getEncoder().getVelocity());
-        SmartDashboard.putNumber("R shooter speed", m_shooterMotorR.getEncoder().getVelocity());
-
-        // TESTING - Put limelight values on SmartDashboard
-        SmartDashboard.putNumber("limelight TX", getLimelightValue("tx")); // Difference of X axis angles between crosshairs
-        SmartDashboard.putNumber("limelight TY", getLimelightValue("ty")); // Difference of Y axis angles between crosshairs
-        SmartDashboard.putNumber("limelight TA", getLimelightValue("ta")); // Area of target
-        SmartDashboard.putNumber("limelight cam", getLimelightValue("camMode")); // Camera mode [0 = VISION | 1 = DRIVER CAM]
-        SmartDashboard.putNumber("limelight led", getLimelightValue("ledMode")); // LED Mode [0 = DEFAULT | 1 = FORCE OFF | 2 = FORCE BLINK | 3 = FORCE ON]
-        SmartDashboard.putNumber("target distance", getLimelightValue("tDistance")); // Distance from target
-
         // TESTING - Put drive motor speeds on SmartDashboard
         SmartDashboard.putNumber("FL", m_driveFL.getSensorCollection().getIntegratedSensorVelocity());
         SmartDashboard.putNumber("FR", m_driveFR.getSensorCollection().getIntegratedSensorVelocity());
@@ -182,7 +168,7 @@ public class FrancoisXXI extends TimedRobot {
         SmartDashboard.putBoolean("esophagus 0", m_esophagusSensorBottom.get());
         SmartDashboard.putBoolean("esophagus 1", m_esophagusSensorTop.get());
 
-        SmartDashboard.putNumber("auton mode", m_autonMode);
+        SmartDashboard.putNumber("auto mode", m_autonMode);
 
         for (int i = 3; i < 8; i++) {
             if (m_switchboard.getRawButton(i)) {
@@ -232,7 +218,7 @@ public class FrancoisXXI extends TimedRobot {
     @Override
     public void autonomousPeriodic() {
 
-        if (m_autonMode == 0) { // Mode 0: Fire starting payload and back off starting line
+        if (m_autonMode == 0) { // Mode 0: Fire starting payload and back off starting line 3ft
 
             switch (m_autonStage) {
                 case (0): // Stage 0: Start ramping up shooter
@@ -268,7 +254,7 @@ public class FrancoisXXI extends TimedRobot {
                     break;
             }
 
-        } else if (m_autonMode == 1) { // Mode 1: Fire starting payload and move forward
+        } else if (m_autonMode == 1) { // Mode 1: Fire starting payload and move forwards off starting line 3ft
 
             switch (m_autonStage) {
                 case (0): // Stage 0: Start ramping up shooter
@@ -304,9 +290,43 @@ public class FrancoisXXI extends TimedRobot {
                     break;
             }
 
-        }
-        
-        if (m_autonMode == 2) { // Mode 2: Fire starting payload then relaod at trench
+        } else if (m_autonMode == 2) { // Mode 2: Fire starting payload and back off starting line 6ft
+
+            switch (m_autonStage) {
+                case (0): // Stage 0: Start ramping up shooter
+                    enableShooter(true);
+
+                    if (isShooterAtSpeed() || m_autonTimer.get() > 5) {
+                        setAutonStage(1);
+                    }
+
+                    break;
+                case (1): // Stage 1: Fire starting payload
+                    enableShooter(true);
+                    enableEsophagus(true);
+
+                    if (m_autonTimer.get() > 3.2) {
+                        setAutonStage(2);
+                    }
+
+                    break;
+                case (2): // Stage 2: Move forward
+                    enableEsophagus(false);
+                    enableShooter(false);
+
+                    if (moveTo(-72, 4)) {
+                        setAutonStage(3);
+                    }
+
+                    break;
+                default: // Default to stop all motors and stop timer
+                    stopAll();
+                    m_autonTimer.stop();
+                    m_autonTimer.reset();
+                    break;
+            }
+
+        } else if (m_autonMode == 3) { // Mode 3: Fire starting payload then relaod at trench
             
             // TODO : Make sure this still works I guess?
             switch (m_autonStage) {
@@ -379,7 +399,7 @@ public class FrancoisXXI extends TimedRobot {
                     m_autonTimer.reset();
                     break;
             }
-        }  else if (m_autonMode == 3) { // Mode 3: Fire starting payload with auto-aim then reload at trench
+        } else if (m_autonMode == 4) { // Mode 4: Fire starting payload with auto-aim then reload at trench
             
             switch (m_autonStage) {
                 case (0): // Stage 0
@@ -499,15 +519,24 @@ public class FrancoisXXI extends TimedRobot {
             }
         }
 
-        // Run esophagus when powercell is at esophagus entry and not at shooter, or if shooter is at speed, otherwise override and run on button press 
-        enableEsophagusAuto(m_gamepad.getRawButton(IDs.Controls.kRunEsophagusAxis));
+        // Run esophagus on button press, else auto index
+        boolean runEsophagusAuto = false;
+
+        if((m_gamepad.getRawAxis(IDs.Controls.kRunEsophagusAxis) > 0.2 && isShooterAtSpeed()) || 
+            m_gamepad.getRawButton(IDs.Controls.kRunEsophagusOverrideButton)){
+            enableEsophagus(true);
+        } else {
+            // Run esophagus when powercell is at esophagus entry and not at shooter
+            runEsophagusAuto = enableEsophagusAuto(m_gamepad.getRawButton(IDs.Controls.kRunEsophagusAxis));
+        }
 
         // Run hopper if intake or esophagus is running otherwise always run on button press
         if (m_joystick.getPOV() == (IDs.Controls.kRunHopperPOV)){
             enableHopper(true);
         } else if (m_joystick.getRawButton(IDs.Controls.kRunIntakeNormalButton) ||
                    m_joystick.getRawButton(IDs.Controls.kRunIntakeReverseButton) || 
-                   m_gamepad.getRawButton(IDs.Controls.kRunEsophagusAxis)) {
+                   m_gamepad.getRawButton(IDs.Controls.kRunEsophagusAxis) || 
+                   runEsophagusAuto) {
             enableHopper(true);
         } else {
             enableHopper(false);
@@ -557,9 +586,6 @@ public class FrancoisXXI extends TimedRobot {
         speedForward = Maths.deadband(speedForward, 0.08);
         speedRotation = Maths.deadband(speedRotation, 0.08);
 
-        SmartDashboard.putNumber("speed fwd", speedForward);
-        SmartDashboard.putNumber("speed rotate", speedRotation);
-
         // Aim to vision target on button press
         if (m_joystick.getRawButton(IDs.Controls.kAlignToTargetButton)) {
             // Turn on limelight
@@ -586,6 +612,11 @@ public class FrancoisXXI extends TimedRobot {
 
     @Override
     public void disabledInit() {
+        enableLimelight(false);
+    }
+
+    @Override
+    public void disabledPeriodic() {
         enableLimelight(false);
     }
 
@@ -705,11 +736,6 @@ public class FrancoisXXI extends TimedRobot {
         double err = setpoint - encoderAvg;
         double speed = err * kP;
 
-        SmartDashboard.putNumber("encoderAvg", encoderAvg);
-        SmartDashboard.putNumber("err", err);
-        SmartDashboard.putNumber("setpoint", setpoint);
-        SmartDashboard.putNumber("speed", speed);
-
         if (Math.abs(err) > 200 && m_autonTimer.get() < timeout) {
             setDrive(-speed);
 
@@ -748,9 +774,6 @@ public class FrancoisXXI extends TimedRobot {
 
         double speed = err * kP;
 
-        SmartDashboard.putNumber("rotate err", err);
-        SmartDashboard.putNumber("rotate speed", speed);
-
         if (Math.abs(err) > 2 && m_autonTimer.get() < timeout) {
             setDriveRotate(-speed);
         } else {
@@ -766,7 +789,7 @@ public class FrancoisXXI extends TimedRobot {
 
         boolean complete = false;
 
-        double tx = getLimelightValue("tx");
+        double tx = getLimelightValue("tx") - 5;
 
         if (getLimelightValue("camMode") == 1) {
             toggleDriverCam();
@@ -877,9 +900,6 @@ public class FrancoisXXI extends TimedRobot {
             enableEsophagus(true);
             run = true;
         } else if (m_esophagusSensorBottom.get() && !m_esophagusSensorTop.get()) {
-            enableEsophagus(true);
-            run = true;
-        } else if (isShooterAtSpeed()) {
             enableEsophagus(true);
             run = true;
         } else {
