@@ -32,7 +32,6 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import org.first857.utils.Maths;
-import org.first857.utils.Safety;
 import org.first857.utils.Controllers.LogitechF310;
 import org.first857.utils.Controllers.SaitekST290;
 import org.first857.utils.Controllers.MSP430Switchboard;
@@ -161,14 +160,10 @@ public class FrancoisXXI extends TimedRobot {
         // TESTING - Put gyro angle on SmartDashboard
         SmartDashboard.putNumber("gyro angle", m_gyro.getAngle());
 
-        // TESTING - Put drive motor speeds on SmartDashboard
-        SmartDashboard.putNumber("FL", m_driveFL.getSensorCollection().getIntegratedSensorVelocity());
-        SmartDashboard.putNumber("FR", m_driveFR.getSensorCollection().getIntegratedSensorVelocity());
+        SmartDashboard.putBoolean("esophagus bottom", m_esophagusSensorBottom.get());
+        SmartDashboard.putBoolean("esophagus top", m_esophagusSensorTop.get());
 
-        SmartDashboard.putBoolean("esophagus 0", m_esophagusSensorBottom.get());
-        SmartDashboard.putBoolean("esophagus 1", m_esophagusSensorTop.get());
-
-        SmartDashboard.putNumber("auto mode", m_autonMode);
+        SmartDashboard.putNumber("autonomous mode", m_autonMode);
 
         for (int i = 3; i < 8; i++) {
             if (m_switchboard.getRawButton(i)) {
@@ -290,7 +285,7 @@ public class FrancoisXXI extends TimedRobot {
                     break;
             }
 
-        } else if (m_autonMode == 2) { // Mode 2: Fire starting payload and back off starting line 6ft
+        } else if (m_autonMode == 2) { // Mode 2: Fire starting payload and back off starting line 6ft and turn
 
             switch (m_autonStage) {
                 case (0): // Stage 0: Start ramping up shooter
@@ -310,12 +305,19 @@ public class FrancoisXXI extends TimedRobot {
                     }
 
                     break;
-                case (2): // Stage 2: Move forward
+                case (2): // Stage 2: Move backwards
                     enableEsophagus(false);
                     enableShooter(false);
 
                     if (moveTo(-72, 4)) {
                         setAutonStage(3);
+                    }
+
+                    break;
+                case (3): // Stage 3: Turn to face field
+
+                    if (turnTo(150, 3)) {
+                        setAutonStage(4);
                     }
 
                     break;
