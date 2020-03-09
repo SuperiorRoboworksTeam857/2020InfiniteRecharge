@@ -22,7 +22,6 @@ public interface IDs extends Controllers {
         // - - Drive
         public static final int kDriveForwardAxis               = SaitekST290.Y_AXIS_ID;
         public static final int kDriveRotateAxis                = SaitekST290.TWIST_AXIS_ID;
-        public static final int kSlowRotateAxis                 = SaitekST290.THROTTLE_AXIS_ID;
 
         // - - Systems
 

@@ -81,7 +81,6 @@ public class FrancoisXXI extends TimedRobot {
     public static ADXRS450_Gyro m_gyro = new ADXRS450_Gyro();
 
     // - Internal Game Piece Sensors
-    // TODO : Hopefully use these at some point?
     public static DigitalInput m_esophagusSensorBottom = new DigitalInput(0);
     public static DigitalInput m_esophagusSensorTop = new DigitalInput(1);
 
@@ -105,11 +104,11 @@ public class FrancoisXXI extends TimedRobot {
     public static final double kTargetHeight = 98.25;
 
     // Robot Dimensions
-    public static final double kLimelightHeight = 41.0; // TODO: Update when limelight mounted
-    public static final double kLimelightAngle = -89.0; // TODO: Update when limelight mounted
+    public static final double kLimelightHeight = 41.0;
+    public static final double kLimelightAngle = -91.0;
 
     // Motor Output Speeds/Limits
-    public static final double kShooterSpeed = -1.0; // at one tick out speed 0.685l // < Not sure what that meant but I'm keeping it there in case it's important - JD
+    public static final double kShooterSpeed = -1.0;
     public static final double kIndexSpeed = -0.9;
     public static final double kHopperSpeed = -0.3;
     public static final double kIntakeSpeed = 1.0;
@@ -213,7 +212,7 @@ public class FrancoisXXI extends TimedRobot {
     @Override
     public void autonomousPeriodic() {
 
-        if (m_autonMode == 0) { // Mode 0: Fire starting payload and back off starting line 3ft
+        if (m_autonMode == 0) {        // Mode 0: Fire starting payload and back off starting line 3ft
 
             switch (m_autonStage) {
                 case (0): // Stage 0: Start ramping up shooter
@@ -330,7 +329,6 @@ public class FrancoisXXI extends TimedRobot {
 
         } else if (m_autonMode == 3) { // Mode 3: Fire starting payload then relaod at trench
             
-            // TODO : Make sure this still works I guess?
             switch (m_autonStage) {
                 case (0): // Stage 0: Start ramping up shooter
                     enableShooter(true);
@@ -484,6 +482,7 @@ public class FrancoisXXI extends TimedRobot {
     @Override
     public void teleopPeriodic() {
 
+        // LED state for this cycle
         LEDmode nextLEDstate = LEDmode.DEFAULT;
 
         // Toggle limelight driver camera on button press
@@ -494,11 +493,6 @@ public class FrancoisXXI extends TimedRobot {
         // Run shooter on trigger
         if (m_gamepad.getRawAxis(IDs.Controls.kDriveShooterAxis) > 0.2) {
             enableShooter(true);
-            if (isShooterAtSpeed()){
-                nextLEDstate = LEDmode.GREEN;
-            } else {
-                nextLEDstate = LEDmode.RED;
-            }
         } else {
             enableShooter(false);
         }
@@ -535,9 +529,9 @@ public class FrancoisXXI extends TimedRobot {
         // Run hopper if intake or esophagus is running otherwise always run on button press
         if (m_joystick.getPOV() == (IDs.Controls.kRunHopperPOV)){
             enableHopper(true);
-        } else if (m_joystick.getRawButton(IDs.Controls.kRunIntakeNormalButton) ||
+        } else if (m_joystick.getRawButton(IDs.Controls.kRunIntakeNormalButton)  ||
                    m_joystick.getRawButton(IDs.Controls.kRunIntakeReverseButton) || 
-                   m_gamepad.getRawButton(IDs.Controls.kRunEsophagusAxis) || 
+                   m_gamepad.getRawButton(IDs.Controls.kRunEsophagusAxis)        || 
                    runEsophagusAuto) {
             enableHopper(true);
         } else {
@@ -577,14 +571,11 @@ public class FrancoisXXI extends TimedRobot {
         setClimberSlideMotor(Maths.deadband(m_gamepad.getRawAxis(IDs.Controls.kDriveClimbSlideAxis), 0.1));
 
         // Main Drive
+        // Set arcade drive speeds to joystick inputs
         double speedForward  = m_joystick.getRawAxis(IDs.Controls.kDriveForwardAxis);
         double speedRotation = m_joystick.getRawAxis(IDs.Controls.kDriveRotateAxis);
 
-        // Slow rotate speed if throttle is below 0.5
-        if(m_joystick.getRawAxis(IDs.Controls.kSlowRotateAxis) > 0.5){
-            speedRotation *= 0.5;
-        }
-
+        // Apply deadband to speeds
         speedForward = Maths.deadband(speedForward, 0.08);
         speedRotation = Maths.deadband(speedRotation, 0.08);
 
@@ -596,11 +587,7 @@ public class FrancoisXXI extends TimedRobot {
             // Turn to target and allow distance adjustments from joystick when aligned
             if (turnToTarget()){
                 setDrive(m_joystick.getRawAxis(IDs.Controls.kDriveForwardAxis));
-                nextLEDstate = LEDmode.GREEN;
-            } else {
-                nextLEDstate = LEDmode.ORANGE;
             }
-
 
         } else {
             // Turn off limelight
@@ -609,6 +596,7 @@ public class FrancoisXXI extends TimedRobot {
             m_drive.arcadeDrive(-speedRotation, speedForward);
         }
 
+        // Set LEDs to match current state of robot in this cycle
         setLEDs(nextLEDstate);
     }
 
@@ -689,14 +677,17 @@ public class FrancoisXXI extends TimedRobot {
 
     public void setAutonStage(int stage, boolean stopAll) {
 
+        // Reset encoders, timer, and gyro
         resetEncoders();
         m_autonTimer.reset();
         m_gyro.reset();
 
         m_autonPIDerrSum = 0;
 
+        // Set all motors to speed 0 if needed
         if(stopAll) stopAll();
 
+        // Set auton stage
         m_autonStage = stage;
     }
 
@@ -755,7 +746,8 @@ public class FrancoisXXI extends TimedRobot {
         double gyroAngle = m_gyro.getAngle();
 
         final double kP = 0.005;
-        final double kI = 0.05;
+        final double kI = 0.000;
+        final double kD = 0.000;
         final double integralLimit = 10;
 
         double dt = Timer.getFPGATimestamp();
@@ -825,6 +817,8 @@ public class FrancoisXXI extends TimedRobot {
     }
 
     public void setDrive(double speedL, double speedR) {
+        m_drive.feed();
+
         m_driveFL.set(speedL);
         m_driveFR.set(speedR);
         // m_driveRL.set(speedL);
