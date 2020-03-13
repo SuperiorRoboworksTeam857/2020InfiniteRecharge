@@ -169,11 +169,11 @@ public abstract interface Controllers {
 
         public static final int TRIGGER_BUTTON_ID = 1;
 
-        public static final int FIRE_2_BUTTON_ID = 2; // Center
-        public static final int FIRE_3_BUTTON_ID = 3; // Left
-        public static final int FIRE_4_BUTTON_ID = 4; // Right
-        public static final int FIRE_5_BUTTON_ID = 5; // Top Left
-        public static final int FIRE_6_BUTTON_ID = 6; // Top Right
+        public static final int FIRE_2_BUTTON_ID = 2; // Stick Center
+        public static final int FIRE_3_BUTTON_ID = 3; // Stick Left
+        public static final int FIRE_4_BUTTON_ID = 4; // Stick Right
+        public static final int FIRE_5_BUTTON_ID = 5; // Stick Top Left
+        public static final int FIRE_6_BUTTON_ID = 6; // Stick Top Right
 
         public static final int X_AXIS_ID        = 0;
         public static final int Y_AXIS_ID        = 1;
@@ -198,10 +198,10 @@ public abstract interface Controllers {
 
         public static final int TRIGGER_BUTTON_ID = 1;
 
-        public static final int FIRE_2_BUTTON_ID  = 2;  // Bottom center
-        public static final int FIRE_3_BUTTON_ID  = 3;  // Middle center 
-        public static final int FIRE_4_BUTTON_ID  = 4;  // Left
-        public static final int FIRE_5_BUTTON_ID  = 5;  // Right
+        public static final int FIRE_2_BUTTON_ID  = 2;  // Stick Bottom center
+        public static final int FIRE_3_BUTTON_ID  = 3;  // Stick Middle center 
+        public static final int FIRE_4_BUTTON_ID  = 4;  // Stick Left
+        public static final int FIRE_5_BUTTON_ID  = 5;  // Stick Right
 
         public static final int FIRE_6_BUTTON_ID  = 6;  // Base left front 
         public static final int FIRE_7_BUTTON_ID  = 7;  // Base left rear
@@ -227,6 +227,43 @@ public abstract interface Controllers {
         public static final int SWITCH_2_SWITCH_ID = 5; // Middle
         public static final int SWITCH_3_SWITCH_ID = 6;
         public static final int SWITCH_4_SWITCH_ID = 7; // Rightmost
+    }
+
+    public class LogitechExtreme3D extends Controller {
+
+        public LogitechExtreme3D(int port) {
+            super(port);
+        }
+
+        public static final int TRIGGER_BUTTON_ID = 1;
+
+        public static final int FIRE_2_BUTTON_ID  = 2; // Stick side
+        public static final int FIRE_3_BUTTON_ID  = 3; // Stick bottom left
+        public static final int FIRE_4_BUTTON_ID  = 4; // Stick bottom right 
+        public static final int FIRE_5_BUTTON_ID  = 5; // Stick top left
+        public static final int FIRE_6_BUTTON_ID  = 6; // Stick top right 
+
+        public static final int FIRE_7_BUTTON_ID  = 7;  // Base front left
+        public static final int FIRE_8_BUTTON_ID  = 8;  // Base front right
+        public static final int FIRE_9_BUTTON_ID  = 9;  // Base middle left
+        public static final int FIRE_10_BUTTON_ID = 10; // Base middle right
+        public static final int FIRE_11_BUTTON_ID = 11; // Base back left
+        public static final int FIRE_12_BUTTON_ID = 12; // Base back right
+
+
+        public static final int X_AXIS_ID        = 0;
+        public static final int Y_AXIS_ID        = 1;
+        public static final int TWIST_AXIS_ID    = 2;
+        public static final int THROTTLE_AXIS_ID = 3;
+
+        public static final int N_POV_ID  = 0;
+        public static final int NE_POV_ID = 45;
+        public static final int E_POV_ID  = 90;
+        public static final int SE_POV_ID = 135;
+        public static final int S_POV_ID  = 180;
+        public static final int SW_POV_ID = 225;
+        public static final int W_POV_ID  = 270;
+        public static final int NW_POV_ID = 315;
     }
 
     public class LogitechX52 extends Controller {

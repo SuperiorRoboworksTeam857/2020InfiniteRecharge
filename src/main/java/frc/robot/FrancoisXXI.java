@@ -747,7 +747,6 @@ public class FrancoisXXI extends TimedRobot {
 
         final double kP = 0.005;
         final double kI = 0.000;
-        final double kD = 0.000;
         final double integralLimit = 10;
 
         double dt = Timer.getFPGATimestamp();
